@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Regno delle Costruzioni - Gestione Cantieri</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+  <!-- SCHERMATA LOGIN -->
+  <div class="login-screen" id="login-screen">
+    <h1>🏰 Regno delle Costruzioni</h1>
+    <p>Sistema di Gestione Cantieri e Dipendenti</p>
+    <div class="login-buttons">
+      <button onclick="startApp('manager')" class="btn btn--primary btn--lg">🏰 Accedi al Sistema</button>
+    </div>
+  </div>
+
+  <!-- INTERFACCIA PRINCIPALE -->
+  <div class="main-app hidden" id="main-app">
+    <header class="header">
+      <div class="header-left">
+        <div class="menu-container">
+          <button class="menu-button" onclick="toggleMenu()">☰ Menu</button>
+          <div class="menu-dropdown hidden" id="menu-dropdown">
+            <div class="menu-item" onclick="focusSearchOperai(); closeMenu();">🔍 Cerca Operaio</div>
+            <div class="menu-item" onclick="focusSearchCantieri(); closeMenu();">🔍 Cerca Cantiere</div>
+            <div class="menu-separator"></div>
+            <div class="menu-item" onclick="addOperaio(); closeMenu();">👷 Aggiungi Dipendente</div>
+            <div class="menu-item" onclick="addCantiere(); closeMenu();">🏗️ Aggiungi Cantiere</div>
+            <div class="menu-separator"></div>
+            <div class="menu-item" onclick="showImportExport(); closeMenu();">📊 Import/Export Excel</div>
+            <div class="menu-item" onclick="showSettings(); closeMenu();">⚙️ Impostazioni</div>
+          </div>
+        </div>
+      </div>
+      <div class="header-center">
+        <h1>🏰 Regno delle Costruzioni</h1>
+      </div>
+      <div class="header-right">
+        <button onclick="logout()" class="btn btn--secondary">🚪 Esci</button>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <div class="search-container">
+        <input type="text" id="search-operai" placeholder="🔍 Cerca operaio..." oninput="filterOperai(this.value)">
+      </div>
+      <div class="search-container">
+        <input type="text" id="search-cantieri" placeholder="🔍 Cerca cantiere..." oninput="filterCantieri(this.value)">
+      </div>
+
+      <div class="content-layout">
+        <aside class="sidebar">
+          <div class="sidebar-header">
+            <h3>👷 Operai Disponibili</h3>
+          </div>
+          <div class="operai-list" id="operai-list"></div>
+        </aside>
+
+        <section class="main-section">
+          <div class="map-container" id="map-container">
+            <h3>🗺️ Mappa Cantieri</h3>
+            <div class="map-area" id="map-area"></div>
+          </div>
+          <div class="calendar-section">
+            <h3>📅 Calendario</h3>
+            <div class="calendar-container" id="calendar-container"></div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
