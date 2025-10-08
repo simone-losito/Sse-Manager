@@ -112,7 +112,9 @@ function renderCantieri() {
                  ondrop="drop(event)" 
                  ondragover="allowDrop(event)"
                  ondragenter="dragEnter(event)"
-                 ondragleave="dragLeave(event)">
+                 ondragleave="dragLeave(event)"
+                 ondblclick="editCantiere(${cantiere.id})"
+                 oncontextmenu="showCantiereContextMenu(event, ${cantiere.id})">
                 <div class="cantiere-header">
                     <div class="cantiere-nome">${cantiere.nome}</div>
                     <div class="cantiere-tipo">${cantiere.tipo}</div>
@@ -125,6 +127,10 @@ function renderCantieri() {
                             <button class="rimuovi-operaio" onclick="rimuoviOperaioDaCantiere(${operaio.id})">×</button>
                         </div>
                     `).join('')}
+                </div>
+                <div class="cantiere-actions" style="margin-top: 0.5rem; text-align: right;">
+                    <button class="btn btn--secondary" style="font-size: 0.8rem; padding: 0.25rem 0.5rem;" onclick="editCantiere(${cantiere.id})">✏️ Modifica</button>
+                    <button class="btn btn--danger" style="font-size: 0.8rem; padding: 0.25rem 0.5rem;" onclick="deleteCantiere(${cantiere.id})">🗑️</button>
                 </div>
             </div>
         `;
@@ -408,6 +414,61 @@ function deleteCantiere(id) {
     }
 }
 
+// === MENU CONTESTUALE CANTIERI ===
+function showCantiereContextMenu(event, cantiereId) {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    // Rimuovi eventuali menu esistenti
+    const existingMenu = document.querySelector('.context-menu');
+    if (existingMenu) {
+        document.body.removeChild(existingMenu);
+    }
+    
+    const contextMenu = document.createElement('div');
+    contextMenu.className = 'context-menu';
+    contextMenu.style.cssText = `
+        position: fixed;
+        background: white;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        z-index: 9999;
+        left: ${event.clientX}px;
+        top: ${event.clientY}px;
+        min-width: 150px;
+    `;
+    
+    contextMenu.innerHTML = `
+        <div style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee;" onclick="editCantiere(${cantiereId}); removeContextMenu();">
+            ✏️ Modifica Cantiere
+        </div>
+        <div style="padding: 8px 12px; cursor: pointer; color: #d32f2f;" onclick="deleteCantiere(${cantiereId}); removeContextMenu();">
+            🗑️ Elimina Cantiere
+        </div>
+    `;
+    
+    document.body.appendChild(contextMenu);
+    
+    // Rimuovi il menu quando si clicca altrove
+    setTimeout(() => {
+        const removeMenu = (e) => {
+            if (!contextMenu.contains(e.target)) {
+                removeContextMenu();
+                document.removeEventListener('click', removeMenu);
+            }
+        };
+        document.addEventListener('click', removeMenu);
+    }, 100);
+}
+
+function removeContextMenu() {
+    const contextMenu = document.querySelector('.context-menu');
+    if (contextMenu) {
+        document.body.removeChild(contextMenu);
+    }
+}
+
 // === CALENDARIO ===
 function toggleCalendarDay(dayKey) {
     const dayElement = document.querySelector(`[data-date="${dayKey}"]`);
@@ -604,6 +665,7 @@ document.addEventListener('DOMContentLoaded', function() {
             closeCantiereModal();
             closeSettings();
             closeImportExport();
+            removeContextMenu();
         }
     });
 });
@@ -623,6 +685,8 @@ window.editCantiere = editCantiere;
 window.saveCantiere = saveCantiere;
 window.closeCantiereModal = closeCantiereModal;
 window.deleteCantiere = deleteCantiere;
+window.showCantiereContextMenu = showCantiereContextMenu;
+window.removeContextMenu = removeContextMenu;
 window.focusSearchOperai = focusSearchOperai;
 window.focusSearchCantieri = focusSearchCantieri;
 window.filterOperai = filterOperai;
