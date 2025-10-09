@@ -1,94 +1,125 @@
-```html
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sse Manager</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
   <style>
+    :root {
+      --wood-brown: #7b5230;
+      --metal-gray: #b0a99f;
+      --cream: #f4e1c1;
+    }
     body {
       font-family: Arial, sans-serif;
       margin: 0;
       padding: 0;
-      background: #f5f5f5;
+      background: url('images/parchment-texture.jpg') top center fixed;
+      background-size: cover;
     }
     header {
-      background: #333;
+      background: var(--wood-brown);
+      border-bottom: 4px solid var(--metal-gray);
       color: #fff;
-      padding: 1rem;
-      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 2rem;
+    }
+    header nav a {
+      color: #fff;
+      margin-left: 1rem;
+      text-decoration: none;
+      font-weight: bold;
     }
     main {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 1rem;
-      padding: 1rem;
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 1.5rem;
+      padding: 2rem;
     }
-    .operai, .cantiere {
-      background: #fff;
-      border-radius: 4px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      padding: 1rem;
-      width: calc(50% - 2rem);
+    .operai {
+      background: var(--cream);
+      border: 2px solid var(--wood-brown);
+      border-radius: 8px;
+      padding: 1.5rem;
+      max-width: 300px;
     }
-    .operai h2, .cantiere h2 {
+    .operai h2 {
       margin-top: 0;
+      font-family: 'Cinzel', serif;
+      color: var(--wood-brown);
     }
-    .operai .operaio {
-      margin-bottom: 0.5rem;
+    .operaio { margin-bottom: 0.5rem; }
+    #cantieri-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px,1fr));
+      gap: 1rem;
     }
-    .orari-cantiere {
-      margin-top: 1rem;
-      padding: 0.5rem;
-      border-top: 1px solid #ccc;
+    .cantiere {
+      background: var(--cream);
+      border: 2px solid var(--wood-brown);
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      padding: 1.5rem;
     }
-    .fascia-oraria {
-      font-size: 0.9rem;
-      margin-bottom: 0.5rem;
+    .titolo-cantiere {
+      font-family: 'Cinzel', serif;
+      font-size: 1.3rem;
+      color: var(--wood-brown);
+      margin: 0;
     }
-    .calendario-cantiere {
-      margin-top: 0.5rem;
-    }
+    .orari-cantiere { margin-top: 1rem; padding: 0.5rem; border-top: 1px solid var(--metal-gray); }
+    .fascia-oraria { font-size: 0.9rem; margin-bottom: 0.5rem; }
+    .calendario-cantiere { margin-top: 0.5rem; background: url('images/parchment-poster.png') no-repeat center; background-size: contain; padding:1rem; border:1px solid var(--metal-gray); }
+    #map { height: 400px; margin-bottom: 1rem; border:2px solid var(--wood-brown); border-radius:8px; }
   </style>
 </head>
 <body>
   <header>
-    <h1>Sse Manager</h1>
-    <p>Sviluppato e pensato da Simone Losito</p>
+    <div>
+      <h1 style="display:inline;">Sse Manager</h1>
+      <span style="margin-left:1rem; font-size:0.9rem;">Sviluppato e pensato da Simone Losito</span>
+    </div>
+    <nav>
+      <a href="#">Home</a>
+      <a href="#cantieri">Cantieri</a>
+      <a href="#operai">Operai</a>
+    </nav>
   </header>
   <main>
-    <section class="operai">
+    <section id="operai" class="operai">
       <h2>👷 Operai Disponibili</h2>
       <div class="operaio">
-        <strong>🔧 Salvatore Blu</strong><br/>
+        <strong>🔧 Salvatore Blu</strong><br>
         Meccanico – Livello 3
       </div>
       <div class="operaio">
-        <strong>⚡ Luigi Viola</strong><br/>
+        <strong>⚡ Luigi Viola</strong><br>
         Elettricista – Livello 2
       </div>
     </section>
-
-    <section id="cantieri-container">
-      <!-- I cantieri verranno generati dinamicamente -->
+    <section id="cantieri"  style="flex-grow:1;">
+      <h2 class="titolo-cantiere" style="margin-bottom:1rem;">🗺️ Mappa Cantieri</h2>
+      <div id="map"></div>
+      <div id="cantieri-container"></div>
     </section>
   </main>
 
   <template id="cantiere-template">
-    <div class="cantiere">
-      <h2 class="titolo-cantiere"></h2>
+    <div class="cantiere draggable">
+      <h3 class="titolo-cantiere"></h3>
       <p class="tipo-cantiere"></p>
-      <p class="orari-default">Orario di default: <span class="orario-testuale"></span></p>
-      <h3>👷 Operai assegnati</h3>
+      <p>Orario di default: <span class="orario-testuale"></span></p>
+      <h4>👷 Operai assegnati</h4>
       <ul class="elenco-operai"></ul>
-
       <div class="orari-cantiere">
-        <label>
-          Fascia Oraria:
-          <select name="fascia-oraria" class="fascia-oraria">
-            <option value="07:00-16:00">07:00–16:00</option>
-            <option value="08:00-17:00" selected>08:00–17:00</option>
-            <option value="08:30-17:30">08:30–17:30</option>
+        <label>Fascia Oraria:
+          <select class="fascia-oraria">
+            <option>07:00–16:00</option>
+            <option>08:00–17:00</option>
+            <option>08:30–17:30</option>
           </select>
         </label>
         <div class="calendario-cantiere"></div>
@@ -96,73 +127,61 @@
     </div>
   </template>
 
+  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
   <script>
     const cantieriData = [
-      {
-        titolo: "Palazzo Roma Centro",
-        tipo: "Civile",
-        orarioDefault: "08:00-17:00",
-        operai: ["Marco Rossi ⭐", "Giuseppe Bianchi"]
-      },
-      {
-        titolo: "Impianto Industriale Ostia",
-        tipo: "Industriale",
-        orarioDefault: "07:00-16:00",
-        operai: ["Francesco Neri ⭐", "Antonio Verde"]
-      },
-      {
-        titolo: "Ristrutturazione Trastevere",
-        tipo: "Residenziale",
-        orarioDefault: "08:30-17:30",
-        operai: []
-      }
+      { titolo: "Palazzo Roma Centro", tipo: "Civile", orarioDefault: "08:00-17:00", coords: [41.9,12.5], operai: ["Marco Rossi ⭐","Giuseppe Bianchi"] },
+      { titolo: "Impianto Industriale Ostia", tipo: "Industriale", orarioDefault: "07:00-16:00", coords: [41.75,12.3], operai: ["Francesco Neri ⭐","Antonio Verde"] },
+      { titolo: "Ristrutturazione Trastevere", tipo: "Residenziale", orarioDefault: "08:30-17:30", coords: [41.888,12.467], operai: [] }
     ];
+
+    // Inizializza mappa
+    const map = L.map('map').setView([41.9,12.5], 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{ attribution:'' }).addTo(map);
+    const markers = [];
+
+    // Aggiungi cantieri mappa con draggable
+    cantieriData.forEach((c,i) => {
+      const marker = L.marker(c.coords, { draggable:true }).addTo(map).bindPopup(c.titolo);
+      marker.on('dragend', e => {
+        const latlng = e.target.getLatLng();
+        cantieriData[i].coords = [latlng.lat, latlng.lng];
+      });
+      markers.push(marker);
+    });
+
+    // Render cantieri list
+    function renderCantieri() {
+      const container = document.getElementById('cantieri-container');
+      container.innerHTML = '';
+      const template = document.getElementById('cantiere-template');
+      cantieriData.forEach(c => {
+        const clone = template.content.cloneNode(true);
+        clone.querySelector('.titolo-cantiere').textContent = c.titolo;
+        clone.querySelector('.tipo-cantiere').textContent = c.tipo;
+        clone.querySelector('.orario-testuale').textContent = c.orarioDefault;
+        c.operai.forEach(op => {
+          let li = document.createElement('li'); li.textContent = op;
+          clone.querySelector('.elenco-operai').appendChild(li);
+        });
+        const cal = clone.querySelector('.calendario-cantiere'); creaCalendario(cal);
+        container.appendChild(clone);
+      });
+    }
 
     function creaCalendario(container) {
       const today = new Date();
       const year = today.getFullYear();
       const month = today.getMonth();
-      const start = new Date(year, month, 1);
-      const end = new Date(year, month + 1, 0);
-      let html = `<strong>${start.toLocaleString('it-IT', { month: 'long' })} ${year}</strong><br/><div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;">`;
-      for (let d = 1; d <= end.getDate(); d++) {
-        html += `<div style="padding:4px;border:1px solid #ddd;text-align:center;">${d}</div>`;
-      }
-      html += "</div>";
-      container.innerHTML = html;
+      const start = new Date(year,month,1);
+      const end = new Date(year,month+1,0);
+      let html = `<strong>${start.toLocaleString('it-IT',{month:'long'})} ${year}</strong><br><div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;">`;
+      for(let d=1; d<=end.getDate();d++) html+=`<div style="padding:4px;border:1px solid #ddd;text-align:center;">${d}</div>`;
+      html+='</div>';
+      container.innerHTML=html;
     }
 
-    function init() {
-      const container = document.getElementById('cantieri-container');
-      const template = document.getElementById('cantiere-template');
-
-      cantieriData.forEach(cantiere => {
-        const clone = template.content.cloneNode(true);
-        clone.querySelector('.titolo-cantiere').textContent = cantiere.titolo;
-        clone.querySelector('.tipo-cantiere').textContent = cantiere.tipo;
-        clone.querySelector('.orario-testuale').textContent = cantiere.orarioDefault;
-        const ul = clone.querySelector('.elenco-operai');
-        cantiere.operai.forEach(op => {
-          const li = document.createElement('li');
-          li.textContent = op;
-          ul.appendChild(li);
-        });
-
-        const calContainer = clone.querySelector('.calendario-cantiere');
-        creaCalendario(calContainer);
-
-        const select = clone.querySelector('.fascia-oraria');
-        select.value = cantiere.orarioDefault;
-        select.addEventListener('change', () => {
-          clone.querySelector('.orario-testuale').textContent = select.value;
-        });
-
-        container.appendChild(clone);
-      });
-    }
-
-    document.addEventListener('DOMContentLoaded', init);
+    document.addEventListener('DOMContentLoaded', ()=>{ renderCantieri(); });
   </script>
 </body>
 </html>
-```
