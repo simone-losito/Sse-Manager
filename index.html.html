@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<!-- saved from url=(0152)https://ppl-ai-code-interpreter-files.s3.amazonaws.com/web/direct-files/96c6bea4695e9779cc1512eda78e7601/8c041c3b-3a66-4c78-9b22-b9cad6ce4e8d/index.html -->
+<html lang="it"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Regno delle Costruzioni</title>
+    <link rel="stylesheet" href="./Regno delle Costruzioni_files/style.css">
+</head>
+<body>
+    <!-- LOGIN -->
+    <div id="login-screen" class="login-screen hidden">
+        <h1>🏰 Regno delle Costruzioni</h1>
+        <p>Sistema Gestione Cantieri Fantasy</p>
+        <div class="login-buttons">
+            <button onclick="loginMaster()" class="btn btn-master">👑 Accedi come Manager</button>
+        </div>
+    </div>
+
+    <!-- APP PRINCIPALE -->
+    <div id="main-app" class="main-app">
+        <header class="header">
+            <h1>🏰 Regno delle Costruzioni</h1>
+            <div class="header-right">
+                <div class="menu-container" id="menu-container">
+                    <button onclick="toggleMenu()" class="btn btn-menu" id="menu-button">☰ Menu</button>
+                    <div class="menu-dropdown hidden" id="menu-dropdown">
+                        <div class="menu-section">
+                            <div class="menu-section-title">🔍 RICERCA</div>
+                            <div class="menu-item" onclick="focusSearchOperai(); closeMenu();">
+                                Cerca Operaio
+                            </div>
+                            <div class="menu-item" onclick="focusSearchCantieri(); closeMenu();">
+                                Cerca Cantiere
+                            </div>
+                        </div>
+                        <div class="menu-separator"></div>
+                        <div class="menu-section">
+                            <div class="menu-section-title">👷 GESTIONE DIPENDENTI</div>
+                            <div class="menu-item" onclick="addOperaio(); closeMenu();">
+                                Aggiungi Dipendente
+                            </div>
+                            <div class="menu-item" onclick="showOperaiList(); closeMenu();">
+                                Lista Dipendenti
+                            </div>
+                        </div>
+                        <div class="menu-separator"></div>
+                        <div class="menu-section">
+                            <div class="menu-section-title">🏗️ GESTIONE CANTIERI</div>
+                            <div class="menu-item" onclick="addCantiere(); closeMenu();">
+                                Aggiungi Cantiere
+                            </div>
+                            <div class="menu-item" onclick="showCantieriList(); closeMenu();">
+                                Lista Cantieri
+                            </div>
+                            <div class="menu-item" onclick="showModifyCantiereMenu(); closeMenu();">
+                                Modifica Cantiere
+                            </div>
+                            <div class="menu-item" onclick="showDeleteCantiereMenu(); closeMenu();">
+                                Elimina Cantiere
+                            </div>
+                        </div>
+                        <div class="menu-separator"></div>
+                        <div class="menu-section">
+                            <div class="menu-section-title">⚙️ IMPOSTAZIONI</div>
+                            <div class="menu-item" onclick="openSettings(); closeMenu();">
+                                Configurazione Email
+                            </div>
+                            <div class="menu-item" onclick="openGeneralSettings(); closeMenu();">
+                                Impostazioni Generali
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <span id="mode-text">Modalità: Manager</span>
+                <button onclick="logout()" class="btn btn-logout">Esci</button>
+            </div>
+        </header>
+        
+        <main class="main-content">
+            <aside class="sidebar">
+                <h2>👷 Operai Disponibili</h2>
+                <div class="search-container">
+                    <input type="text" id="search-operai" placeholder="🔍 Cerca operai..." class="search-input">
+                </div>
+                <div id="controls-operai"><button onclick="addOperaio()" class="btn btn-primary">+ Aggiungi Operaio</button></div>
+                <div id="operai-container"><p style="color: #95a5a6; text-align: center; padding: 2rem;">Nessun operaio disponibile</p></div>
+            </aside>
+            
+            <section class="map-area">
+                <h2>🏰 Mappa Cantieri</h2>
+                <div class="search-container">
+                    <input type="text" id="search-cantieri" placeholder="🔍 Cerca cantieri..." class="search-input">
+                </div>
+                <div id="controls-cantieri"><button onclick="addCantiere()" class="btn btn-add">➕ Aggiungi Cantiere</button></div>
+                <div id="map-container"><div class="cantiere" data-cantiere-id="1" style="left: 150px; top: 200px;">
+            <div class="cantiere-icon">🏰</div>
+            <div class="cantiere-nome">Palazzo Roma Centro</div>
+            <div class="cantiere-count">4</div>
+            
+            <div class="cantiere-controls">
+                <button onclick="event.stopPropagation(); editCantiere(1)" class="btn-small btn-edit">✏️</button>
+                <button onclick="event.stopPropagation(); removeCantiere(1)" class="btn-small btn-delete">🗑️</button>
+            </div>
+        
+        </div><div class="cantiere" data-cantiere-id="2" style="left: 400px; top: 300px;">
+            <div class="cantiere-icon">🏭</div>
+            <div class="cantiere-nome">Impianto Industriale Ostia</div>
+            <div class="cantiere-count">2</div>
+            
+            <div class="cantiere-controls">
+                <button onclick="event.stopPropagation(); editCantiere(2)" class="btn-small btn-edit">✏️</button>
+                <button onclick="event.stopPropagation(); removeCantiere(2)" class="btn-small btn-delete">🗑️</button>
+            </div>
+        
+        </div><div class="cantiere" data-cantiere-id="3" style="left: 300px; top: 150px;">
+            <div class="cantiere-icon">🏢</div>
+            <div class="cantiere-nome">Ristrutturazione Trastevere</div>
+            
+            
+            <div class="cantiere-controls">
+                <button onclick="event.stopPropagation(); editCantiere(3)" class="btn-small btn-edit">✏️</button>
+                <button onclick="event.stopPropagation(); removeCantiere(3)" class="btn-small btn-delete">🗑️</button>
+            </div>
+        
+        </div></div>
+            </section>
+        </main>
+    </div>
+
+    <!-- MODAL MODIFICA OPERAIO -->
+    <div id="modal-edit" class="modal hidden">
+        <div class="modal-content">
+            <h3>Modifica Operaio</h3>
+            <button onclick="closeModal()" class="modal-close">×</button>
+            <form id="edit-form">
+                <input type="hidden" id="edit-id">
+                <input type="text" id="edit-nome" placeholder="Nome" required="">
+                <input type="email" id="edit-mail" placeholder="Email" required="">
+                <input type="tel" id="edit-telefono" placeholder="Telefono" required="">
+                <select id="edit-spec" required="">
+                    <option value="Elettricista">Elettricista</option>
+                    <option value="Meccanico">Meccanico</option>
+                </select>
+                <select id="edit-level" required="">
+                    <option value="1">Livello 1</option>
+                    <option value="2">Livello 2</option>
+                    <option value="3">Livello 3</option>
+                    <option value="4">Livello 4</option>
+                    <option value="5">Livello 5</option>
+                </select>
+                <label class="checkbox-container">
+                    <input type="checkbox" id="edit-preposto">
+                    <span class="checkmark"></span>
+                    Preposto
+                </label>
+                <button type="submit">Salva</button>
+                <button type="button" onclick="closeModal()">Annulla</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL MODIFICA CANTIERE -->
+    <div id="modal-edit-cantiere" class="modal hidden">
+        <div class="modal-content">
+            <h3>Modifica Cantiere</h3>
+            <button onclick="closeCantiereEditModal()" class="modal-close">×</button>
+            <form id="edit-cantiere-form">
+                <input type="hidden" id="edit-cantiere-id">
+                <input type="text" id="edit-cantiere-nome" placeholder="Nome cantiere" required="">
+                <select id="edit-cantiere-tipo" required="">
+                    <option value="Civile">🏰 Civile</option>
+                    <option value="Industriale">🏭 Industriale</option>
+                    <option value="Residenziale">🏢 Residenziale</option>
+                </select>
+                <input type="number" id="edit-cantiere-x" placeholder="Posizione X (50-600)" min="50" max="600" required="">
+                <input type="number" id="edit-cantiere-y" placeholder="Posizione Y (50-300)" min="50" max="300" required="">
+                <button type="submit">Salva Modifiche</button>
+                <button type="button" onclick="closeCantiereEditModal()">Annulla</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL DETTAGLI CANTIERE -->
+    <div id="cantiere-modal" class="modal hidden">
+        <div class="modal-content modal-content-large">
+            <button onclick="closeCantiereModal()" class="modal-close">×</button>
+            <div id="cantiere-modal-content">
+        <h3>🏷️ Ristrutturazione Trastevere</h3>
+        <p><strong>Tipo:</strong> Residenziale</p>
+        <p><strong>Posizione:</strong> X: 300, Y: 150</p>
+        <p><strong>Operai Assegnati:</strong> 0</p>
+        <div class="operai-list">
+            <h4>Operai:</h4>
+            <p><em>Nessun operaio assegnato</em></p>
+        </div>
+        
+        <div class="calendar-section">
+            <h4>📅 Seleziona Giorni di Lavoro</h4>
+            <div class="calendar-header">
+                <span>Ottobre 2025</span>
+            </div>
+            <div class="calendar-grid">
+                <div class="calendar-day-header">D</div>
+                <div class="calendar-day-header">L</div>
+                <div class="calendar-day-header">M</div>
+                <div class="calendar-day-header">M</div>
+                <div class="calendar-day-header">G</div>
+                <div class="calendar-day-header">V</div>
+                <div class="calendar-day-header">S</div>
+    <div class="calendar-day other-month">28</div><div class="calendar-day other-month">29</div><div class="calendar-day other-month">30</div><div class="calendar-day">1</div><div class="calendar-day">2</div><div class="calendar-day">3</div><div class="calendar-day">4</div><div class="calendar-day">5</div><div class="calendar-day">6</div><div class="calendar-day">7</div><div class="calendar-day">8</div><div class="calendar-day">9</div><div class="calendar-day" onclick="toggleCalendarDay(3, &#39;2025-10-09&#39;)">10</div><div class="calendar-day" onclick="toggleCalendarDay(3, &#39;2025-10-10&#39;)">11</div><div class="calendar-day" onclick="toggleCalendarDay(3, &#39;2025-10-11&#39;)">12</div><div class="calendar-day" onclick="toggleCalendarDay(3, &#39;2025-10-12&#39;)">13</div><div class="calendar-day" onclick="toggleCalendarDay(3, &#39;2025-10-13&#39;)">14</div><div class="calendar-day" onclick="toggleCalendarDay(3, &#39;2025-10-14&#39;)">15</div><div class="calendar-day" onclick="toggleCalendarDay(3, &#39;2025-10-15&#39;)">16</div><div class="calendar-day" onclick="toggleCalendarDay(3, &#39;2025-10-16&#39;)">17</div><div class="calendar-day" onclick="toggleCalendarDay(3, &#39;2025-10-17&#39;)">18</div><div class="calendar-day" onclick="toggleCalendarDay(3, &#39;2025-10-18&#39;)">19</div><div class="calendar-day" onclick="toggleCalendarDay(3, &#39;2025-10-19&#39;)">20</div><div class="calendar-day" onclick="toggleCalendarDay(3, &#39;2025-10-20&#39;)">21</div><div class="calendar-day" onclick="toggleCalendarDay(3, &#39;2025-10-21&#39;)">22</div><div class="calendar-day" onclick="toggleCalendarDay(3, &#39;2025-10-22&#39;)">23</div><div class="calendar-day" onclick="toggleCalendarDay(3, &#39;2025-10-23&#39;)">24</div><div class="calendar-day" onclick="toggleCalendarDay(3, &#39;2025-10-24&#39;)">25</div><div class="calendar-day" onclick="toggleCalendarDay(3, &#39;2025-10-25&#39;)">26</div><div class="calendar-day" onclick="toggleCalendarDay(3, &#39;2025-10-26&#39;)">27</div><div class="calendar-day" onclick="toggleCalendarDay(3, &#39;2025-10-27&#39;)">28</div><div class="calendar-day" onclick="toggleCalendarDay(3, &#39;2025-10-28&#39;)">29</div><div class="calendar-day" onclick="toggleCalendarDay(3, &#39;2025-10-29&#39;)">30</div><div class="calendar-day" onclick="toggleCalendarDay(3, &#39;2025-10-30&#39;)">31</div><div class="calendar-day other-month">1</div><div class="calendar-day other-month">2</div><div class="calendar-day other-month">3</div><div class="calendar-day other-month">4</div><div class="calendar-day other-month">5</div><div class="calendar-day other-month">6</div><div class="calendar-day other-month">7</div><div class="calendar-day other-month">8</div>
+            </div>
+        </div>
+    
+        
+        <div class="time-slot-container">
+            <h4>⏰ Orario di Lavoro:</h4>
+            <div class="time-inputs">
+                <label>Dalle: 
+                    <input type="time" id="time-start-3" value="08:30" onchange="handleTimeChange(3)">
+                </label>
+                <label>Alle: 
+                    <input type="time" id="time-end-3" value="17:30" onchange="handleTimeChange(3)">
+                </label>
+            </div>
+        </div>
+    
+        
+        <div class="email-section">
+            <h4>📧 Invio Partecipazione</h4>
+            <p id="days-counter-3">Giorni selezionati: 0</p>
+            <p id="time-display-3">Orario: 08:30 - 17:30</p>
+            <button onclick="sendParticipationEmails(3)" class="btn-send-email" disabled="" id="email-btn-3">
+                Invia Email Partecipazione
+            </button>
+        </div>
+    
+        <button onclick="closeCantiereModal()" class="btn">Chiudi</button>
+    </div>
+        </div>
+    </div>
+
+    <!-- MODAL IMPOSTAZIONI SISTEMA -->
+    <div id="modal-settings" class="modal hidden">
+        <div class="modal-content modal-large">
+            <h3>⚙️ Impostazioni Sistema</h3>
+            <button onclick="closeSettings()" class="modal-close">×</button>
+            <div class="tabs-container">
+                <div class="tab active" onclick="showSettingsTab(&#39;email&#39;)">📧 Email</div>
+                <div class="tab" onclick="showSettingsTab(&#39;general&#39;)">🌐 Generale</div>
+            </div>
+            
+            <!-- Tab Email -->
+            <div id="settings-email" class="tab-content">
+                <h4>📧 Configurazione Server Email</h4>
+                <form id="email-settings-form">
+                    <div class="form-group">
+                        <label class="form-label">Server SMTP</label>
+                        <input type="text" id="smtp-server" class="form-control" placeholder="es: smtp.gmail.com" required="">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Porta SMTP</label>
+                        <input type="number" id="smtp-port" class="form-control" placeholder="es: 587" required="">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email Mittente</label>
+                        <input type="email" id="sender-email" class="form-control" placeholder="es: cantieri@azienda.it" required="">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Password Applicazione</label>
+                        <input type="password" id="email-password" class="form-control" placeholder="Password per l&#39;email" required="">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Nome Mittente</label>
+                        <input type="text" id="sender-name" class="form-control" placeholder="es: Sistema Cantieri" required="">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Oggetto Email Template</label>
+                        <input type="text" id="email-subject" class="form-control" placeholder="es: Convocazione Cantiere - {cantiere}" required="">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Template Corpo Email</label>
+                        <textarea id="email-template" class="form-control" rows="6" placeholder="Template del corpo dell&#39;email..." required="">Gentile {operaio},
+
+Siete convocati per i seguenti giorni di lavoro:
+
+🏗️ Cantiere: {cantiere}
+📅 Giorni: {giorni}
+⏰ Orario: {orario}
+
+Vi preghiamo di presentarvi puntuali.
+
+Cordiali saluti,
+{mittente}</textarea>
+                    </div>
+                    <div class="email-actions">
+                        <button type="button" onclick="saveEmailSettings()" class="btn btn--primary">💾 Salva</button>
+                        <button type="button" onclick="testEmailConnection()" class="btn btn--secondary">🔧 Test Connessione</button>
+                        <button type="button" onclick="resetEmailSettings()" class="btn btn--outline">🔄 Reset</button>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Tab Generale -->
+            <div id="settings-general" class="tab-content hidden">
+                <h4>🌐 Impostazioni Generali</h4>
+                <form id="general-settings-form">
+                    <div class="form-group">
+                        <label class="form-label">Nome Azienda</label>
+                        <input type="text" id="company-name" class="form-control" placeholder="es: Regno delle Costruzioni Srl">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Timezone</label>
+                        <select id="timezone" class="form-control">
+                            <option value="Europe/Rome">Europa/Roma (CET/CEST)</option>
+                            <option value="UTC">UTC</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Lingua</label>
+                        <select id="language" class="form-control">
+                            <option value="it">Italiano</option>
+                            <option value="en">English</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Formato Data/Ora</label>
+                        <select id="datetime-format" class="form-control">
+                            <option value="dd/mm/yyyy">DD/MM/YYYY</option>
+                            <option value="mm/dd/yyyy">MM/DD/YYYY</option>
+                            <option value="yyyy-mm-dd">YYYY-MM-DD</option>
+                        </select>
+                    </div>
+                    <div class="general-actions">
+                        <button type="button" onclick="saveGeneralSettings()" class="btn btn--primary">💾 Salva</button>
+                        <button type="button" onclick="resetGeneralSettings()" class="btn btn--outline">🔄 Reset</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="./Regno delle Costruzioni_files/app.js.download"></script>
+
+</body></html>
