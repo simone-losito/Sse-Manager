@@ -4,184 +4,143 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sse Manager</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
-  <style>
-    :root {
-      --wood-brown: #7b5230;
-      --metal-gray: #b0a99f;
-      --cream: #f4e1c1;
-    }
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      background: url('images/parchment-texture.jpg') top center fixed;
-      background-size: cover;
-    }
-    header {
-      background: var(--wood-brown);
-      border-bottom: 4px solid var(--metal-gray);
-      color: #fff;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 1rem 2rem;
-    }
-    header nav a {
-      color: #fff;
-      margin-left: 1rem;
-      text-decoration: none;
-      font-weight: bold;
-    }
-    main {
-      display: grid;
-      grid-template-columns: 1fr 2fr;
-      gap: 1.5rem;
-      padding: 2rem;
-    }
-    .operai {
-      background: var(--cream);
-      border: 2px solid var(--wood-brown);
-      border-radius: 8px;
-      padding: 1.5rem;
-      max-width: 300px;
-    }
-    .operai h2 {
-      margin-top: 0;
-      font-family: 'Cinzel', serif;
-      color: var(--wood-brown);
-    }
-    .operaio { margin-bottom: 0.5rem; }
-    #cantieri-container {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px,1fr));
-      gap: 1rem;
-    }
-    .cantiere {
-      background: var(--cream);
-      border: 2px solid var(--wood-brown);
-      border-radius: 8px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-      padding: 1.5rem;
-    }
-    .titolo-cantiere {
-      font-family: 'Cinzel', serif;
-      font-size: 1.3rem;
-      color: var(--wood-brown);
-      margin: 0;
-    }
-    .orari-cantiere { margin-top: 1rem; padding: 0.5rem; border-top: 1px solid var(--metal-gray); }
-    .fascia-oraria { font-size: 0.9rem; margin-bottom: 0.5rem; }
-    .calendario-cantiere { margin-top: 0.5rem; background: url('images/parchment-poster.png') no-repeat center; background-size: contain; padding:1rem; border:1px solid var(--metal-gray); }
-    #map { height: 400px; margin-bottom: 1rem; border:2px solid var(--wood-brown); border-radius:8px; }
-  </style>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <header>
-    <div>
-      <h1 style="display:inline;">Sse Manager</h1>
-      <span style="margin-left:1rem; font-size:0.9rem;">Sviluppato e pensato da Simone Losito</span>
+  <!-- Header e Navbar -->
+  <header class="bg-dark text-white py-3">
+    <div class="container d-flex justify-content-between align-items-center">
+      <h1 class="h3 mb-0">Sse Manager</h1>
+      <small>Sviluppato e pensato da Simone Losito</small>
+      <nav>
+        <ul class="nav">
+          <li class="nav-item"><a class="nav-link text-white" href="#home">Home</a></li>
+          <li class="nav-item"><a class="nav-link text-white" href="#cantieri">Cantieri</a></li>
+          <li class="nav-item"><a class="nav-link text-white" href="#operai">Operai</a></li>
+        </ul>
+      </nav>
     </div>
-    <nav>
-      <a href="#">Home</a>
-      <a href="#cantieri">Cantieri</a>
-      <a href="#operai">Operai</a>
-    </nav>
   </header>
-  <main>
-    <section id="operai" class="operai">
-      <h2>👷 Operai Disponibili</h2>
-      <div class="operaio">
-        <strong>🔧 Salvatore Blu</strong><br>
-        Meccanico – Livello 3
-      </div>
-      <div class="operaio">
-        <strong>⚡ Luigi Viola</strong><br>
-        Elettricista – Livello 2
-      </div>
-    </section>
-    <section id="cantieri"  style="flex-grow:1;">
-      <h2 class="titolo-cantiere" style="margin-bottom:1rem;">🗺️ Mappa Cantieri</h2>
-      <div id="map"></div>
-      <div id="cantieri-container"></div>
-    </section>
-  </main>
 
+  <!-- Sezione Operai -->
+  <section id="operai" class="py-4">
+    <div class="container">
+      <h2 class="mb-3">👷 Operai Disponibili</h2>
+      <div class="row g-3">
+        <div class="col-md-4">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">🔧 Salvatore Blu</h5>
+              <p class="card-text mb-0">Meccanico</p>
+              <small>Livello 3</small>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">⚡ Luigi Viola</h5>
+              <p class="card-text mb-0">Elettricista</p>
+              <small>Livello 2</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Sezione Cantieri con Mappa e Drag & Drop -->
+  <section id="cantieri" class="py-4 bg-light">
+    <div class="container">
+      <h2 class="mb-3">🗺️ Mappa Cantieri</h2>
+      <div id="map" class="mb-3" style="height: 400px;"></div>
+      <div class="row g-3" id="cantieri-list">
+        <!-- Cantieri generati dinamicamente -->
+      </div>
+    </div>
+  </section>
+
+  <!-- Template Cantieri -->
   <template id="cantiere-template">
-    <div class="cantiere draggable">
-      <h3 class="titolo-cantiere"></h3>
-      <p class="tipo-cantiere"></p>
-      <p>Orario di default: <span class="orario-testuale"></span></p>
-      <h4>👷 Operai assegnati</h4>
-      <ul class="elenco-operai"></ul>
-      <div class="orari-cantiere">
-        <label>Fascia Oraria:
-          <select class="fascia-oraria">
-            <option>07:00–16:00</option>
-            <option>08:00–17:00</option>
-            <option>08:30–17:30</option>
-          </select>
-        </label>
-        <div class="calendario-cantiere"></div>
+    <div class="col-md-4" draggable="true">
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title titolo-cantiere"></h5>
+          <p class="card-text tipo-cantiere"></p>
+          <p class="mb-1">Orario: <span class="orario-testuale"></span></p>
+          <h6>👷 Operai Assegnati</h6>
+          <ul class="elenco-operai list-unstyled mb-3"></ul>
+          <div class="mb-2">
+            <label for="fascia" class="form-label">Fascia Oraria:</label>
+            <select class="form-select fascia-oraria">
+              <option value="07:00-16:00">07:00–16:00</option>
+              <option value="08:00-17:00">08:00–17:00</option>
+              <option value="08:30-17:30">08:30–17:30</option>
+            </select>
+          </div>
+          <div class="calendario-cantiere"></div>
+        </div>
       </div>
     </div>
   </template>
 
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
   <script>
+    // Dati Cantieri
     const cantieriData = [
       { titolo: "Palazzo Roma Centro", tipo: "Civile", orarioDefault: "08:00-17:00", coords: [41.9,12.5], operai: ["Marco Rossi ⭐","Giuseppe Bianchi"] },
       { titolo: "Impianto Industriale Ostia", tipo: "Industriale", orarioDefault: "07:00-16:00", coords: [41.75,12.3], operai: ["Francesco Neri ⭐","Antonio Verde"] },
       { titolo: "Ristrutturazione Trastevere", tipo: "Residenziale", orarioDefault: "08:30-17:30", coords: [41.888,12.467], operai: [] }
     ];
 
-    // Inizializza mappa
+    // Inizializza Mappa
     const map = L.map('map').setView([41.9,12.5], 12);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{ attribution:'' }).addTo(map);
-    const markers = [];
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '' }).addTo(map);
 
-    // Aggiungi cantieri mappa con draggable
-    cantieriData.forEach((c,i) => {
-      const marker = L.marker(c.coords, { draggable:true }).addTo(map).bindPopup(c.titolo);
+    // Aggiungi Marker Drag & Drop
+    cantieriData.forEach((c, i) => {
+      const marker = L.marker(c.coords, { draggable: true }).addTo(map).bindPopup(c.titolo);
       marker.on('dragend', e => {
-        const latlng = e.target.getLatLng();
-        cantieriData[i].coords = [latlng.lat, latlng.lng];
+        const { lat, lng } = e.target.getLatLng();
+        cantieriData[i].coords = [lat, lng];
       });
-      markers.push(marker);
     });
 
-    // Render cantieri list
+    // Crea Calendario
+    function creaCalendario(container) {
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = today.getMonth();
+      const start = new Date(year, month, 1);
+      const end = new Date(year, month + 1, 0);
+      let html = `<strong>${start.toLocaleString('it-IT',{ month:'long'})} ${year}</strong><div class="d-grid gap-1" style="grid-template-columns: repeat(7, 1fr);">`;
+      for(let d=1; d<=end.getDate(); d++) {
+        html += `<div class="border text-center py-1">${d}</div>`;
+      }
+      html += '</div>';
+      container.innerHTML = html;
+    }
+
+    // Render Cantieri
     function renderCantieri() {
-      const container = document.getElementById('cantieri-container');
-      container.innerHTML = '';
+      const list = document.getElementById('cantieri-list');
       const template = document.getElementById('cantiere-template');
+      list.innerHTML = '';
       cantieriData.forEach(c => {
         const clone = template.content.cloneNode(true);
         clone.querySelector('.titolo-cantiere').textContent = c.titolo;
         clone.querySelector('.tipo-cantiere').textContent = c.tipo;
         clone.querySelector('.orario-testuale').textContent = c.orarioDefault;
-        c.operai.forEach(op => {
-          let li = document.createElement('li'); li.textContent = op;
-          clone.querySelector('.elenco-operai').appendChild(li);
-        });
+        const ul = clone.querySelector('.elenco-operai');
+        c.operai.forEach(op => { const li = document.createElement('li'); li.textContent = op; ul.appendChild(li); });
         const cal = clone.querySelector('.calendario-cantiere'); creaCalendario(cal);
-        container.appendChild(clone);
+        list.appendChild(clone);
       });
     }
 
-    function creaCalendario(container) {
-      const today = new Date();
-      const year = today.getFullYear();
-      const month = today.getMonth();
-      const start = new Date(year,month,1);
-      const end = new Date(year,month+1,0);
-      let html = `<strong>${start.toLocaleString('it-IT',{month:'long'})} ${year}</strong><br><div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;">`;
-      for(let d=1; d<=end.getDate();d++) html+=`<div style="padding:4px;border:1px solid #ddd;text-align:center;">${d}</div>`;
-      html+='</div>';
-      container.innerHTML=html;
-    }
-
-    document.addEventListener('DOMContentLoaded', ()=>{ renderCantieri(); });
+    document.addEventListener('DOMContentLoaded', () => { renderCantieri(); });
   </script>
 </body>
 </html>
