@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Regno delle Costruzioni - Gestione Cantieri</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+    <!-- SCHERMATA LOGIN -->
+    <div class="login-screen" id="login-screen">
+        <h1>🏰 Regno delle Costruzioni</h1>
+        <p>Sistema di Gestione Cantieri e Dipendenti</p>
+        <div class="login-buttons">
+            <button onclick="startApp('manager')" class="btn btn--primary btn--lg">🏰 Accedi al Sistema</button>
+        </div>
+    </div>
+
+    <!-- INTERFACCIA PRINCIPALE -->
+    <div class="main-app hidden" id="main-app">
+        <header class="header">
+            <!-- MENU A SINISTRA -->
+            <div class="header-left">
+                <div class="menu-container">
+                    <button class="menu-button" onclick="toggleMenu()">☰ Menu</button>
+                    <div class="menu-dropdown hidden" id="menu-dropdown">
+                        <div class="menu-item" onclick="focusSearchOperai(); closeMenu();">
+                            🔍 Cerca Operaio
+                        </div>
+                        <div class="menu-item" onclick="focusSearchCantieri(); closeMenu();">
+                            🔍 Cerca Cantiere
+                        </div>
+                        <div class="menu-separator"></div>
+                        <div class="menu-item" onclick="addOperaio(); closeMenu();">
+                            👷 Aggiungi Dipendente
+                        </div>
+                        <div class="menu-item" onclick="addCantiere(); closeMenu();">
+                            🏗️ Aggiungi Cantiere
+                        </div>
+                        <div class="menu-separator"></div>
+                        <div class="menu-item" onclick="showImportExport(); closeMenu();">
+                            📊 Import/Export Excel
+                        </div>
+                        <div class="menu-item" onclick="showSettings(); closeMenu();">
+                            ⚙️ Impostazioni
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TITOLO E CONTROLLI CENTRALI -->
+            <div class="header-center">
+                <h1>🏰 Regno delle Costruzioni</h1>
+            </div>
+
+            <!-- CONTROLLI A DESTRA -->
+            <div class="header-right">
+                <button onclick="logout()" class="btn btn--secondary">🚪 Esci</button>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <!-- SEARCH BAR OPERAI -->
+            <div class="search-container">
+                <input type="text" id="search-operai" placeholder="🔍 Cerca operaio..." oninput="filterOperai(this.value)">
+            </div>
+
+            <!-- SEARCH BAR CANTIERI -->
+            <div class="search-container">
+                <input type="text" id="search-cantieri" placeholder="🔍 Cerca cantiere..." oninput="filterCantieri(this.value)">
+            </div>
+
+            <div class="content-layout">
+                <!-- SIDEBAR OPERAI -->
+                <aside class="sidebar">
+                    <div class="sidebar-header">
+                        <h3>👷 Operai Disponibili</h3>
+                    </div>
+                    <div class="operai-list" id="operai-list">
+                        <!-- Gli operai vengono popolati da JavaScript -->
+                    </div>
+                </aside>
+
+                <!-- AREA PRINCIPALE -->
+                <section class="main-section">
+                    <!-- MAPPA CANTIERI -->
+                    <div class="map-container" id="map-container">
+                        <h3>🗺️ Mappa Cantieri</h3>
+                        <div class="map-area" id="map-area">
+                            <!-- I cantieri vengono popolati da JavaScript -->
+                        </div>
+                    </div>
+
+                    <!-- CALENDARIO -->
+                    <div class="calendar-section">
+                        <h3>📅 Calendario</h3>
+                        <div class="calendar-container" id="calendar-container">
+                            <!-- Il calendario viene popolato da JavaScript -->
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- MODAL OPERAIO -->
+    <div class="modal hidden" id="operaio-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="operaio-modal-title">Aggiungi Operaio</h3>
+                <button class="modal-close" onclick="closeOperaioModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="operaio-form">
+                    <div class="form-group">
+                        <label for="operaio-nome">Nome:</label>
+                        <input type="text" id="operaio-nome" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="operaio-email">Email:</label>
+                        <input type="email" id="operaio-email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="operaio-telefono">Telefono:</label>
+                        <input type="tel" id="operaio-telefono">
+                    </div>
+                    <div class="form-group">
+                        <label for="operaio-specializzazione">Specializzazione:</label>
+                        <select id="operaio-specializzazione">
+                            <option value="Elettricista">Elettricista</option>
+                            <option value="Meccanico">Meccanico</option>
+                            <option value="Muratore">Muratore</option>
+                            <option value="Carpentiere">Carpentiere</option>
+                            <option value="Idraulico">Idraulico</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="operaio-livello">Livello (1-5):</label>
+                        <input type="number" id="operaio-livello" min="1" max="5" value="3">
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <label>
+                            <input type="checkbox" id="operaio-preposto">
+                            <span class="checkmark"></span>
+                            Preposto
+                        </label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn--secondary" onclick="closeOperaioModal()">Annulla</button>
+                <button class="btn btn--primary" onclick="saveOperaio()">Salva</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL CANTIERE -->
+    <div class="modal hidden" id="cantiere-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="cantiere-modal-title">Aggiungi Cantiere</h3>
+                <button class="modal-close" onclick="closeCantiereModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="cantiere-form">
+                    <div class="form-group">
+                        <label for="cantiere-nome">Nome Cantiere:</label>
+                        <input type="text" id="cantiere-nome" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="cantiere-tipo">Tipo:</label>
+                        <select id="cantiere-tipo">
+                            <option value="Civile">Civile</option>
+                            <option value="Industriale">Industriale</option>
+                            <option value="Residenziale">Residenziale</option>
+                            <option value="Commerciale">Commerciale</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="cantiere-orario-inizio">Orario Inizio:</label>
+                        <input type="time" id="cantiere-orario-inizio" value="08:00">
+                    </div>
+                    <div class="form-group">
+                        <label for="cantiere-orario-fine">Orario Fine:</label>
+                        <input type="time" id="cantiere-orario-fine" value="17:00">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn--secondary" onclick="closeCantiereModal()">Annulla</button>
+                <button class="btn btn--primary" onclick="saveCantiere()">Salva</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL IMPOSTAZIONI -->
+    <div class="modal hidden" id="settings-modal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h3>⚙️ Impostazioni Sistema</h3>
+                <button class="modal-close" onclick="closeSettings()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="settings-tabs">
+                    <button class="tab-button active" onclick="showTab('email-settings')">📧 Email</button>
+                    <button class="tab-button" onclick="showTab('general-settings')">⚙️ Generali</button>
+                </div>
+
+                <!-- TAB EMAIL SETTINGS -->
+                <div class="tab-content active" id="email-settings">
+                    <h4>📧 Configurazione Email SMTP</h4>
+                    <div class="form-group">
+                        <label for="smtp-server">Server SMTP:</label>
+                        <input type="text" id="smtp-server" placeholder="smtp.gmail.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="smtp-port">Porta:</label>
+                        <input type="number" id="smtp-port" value="587">
+                    </div>
+                    <div class="form-group">
+                        <label for="smtp-username">Username:</label>
+                        <input type="email" id="smtp-username" placeholder="tua-email@gmail.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="smtp-password">Password:</label>
+                        <input type="password" id="smtp-password" placeholder="password-app">
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <label>
+                            <input type="checkbox" id="smtp-ssl" checked>
+                            <span class="checkmark"></span>
+                            Usa SSL/TLS
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <button class="btn btn--secondary" onclick="testEmailConnection()">🧪 Test Connessione</button>
+                    </div>
+
+                    <h4>📝 Template Email</h4>
+                    <div class="form-group">
+                        <label for="email-subject">Oggetto:</label>
+                        <input type="text" id="email-subject" value="Assegnazione Cantiere - {{cantiere}}">
+                    </div>
+                    <div class="form-group">
+                        <label for="email-template">Corpo Email:</label>
+                        <textarea id="email-template" rows="10">Ciao {{nome}},
+
+Sei stato assegnato al cantiere: {{cantiere}}
+Orario di lavoro: {{orario}}
+Giorni selezionati: {{giorni}}
+
+Cordiali saluti,
+{{azienda}}</textarea>
+                    </div>
+                </div>
+
+                <!-- TAB GENERAL SETTINGS -->
+                <div class="tab-content" id="general-settings">
+                    <h4>🏢 Impostazioni Generali</h4>
+                    <div class="form-group">
+                        <label for="company-name">Nome Azienda:</label>
+                        <input type="text" id="company-name" value="Regno delle Costruzioni">
+                    </div>
+                    <div class="form-group">
+                        <label for="timezone">Timezone:</label>
+                        <select id="timezone">
+                            <option value="Europe/Rome">Europa/Roma</option>
+                            <option value="Europe/London">Europa/Londra</option>
+                            <option value="America/New_York">America/New York</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="language">Lingua:</label>
+                        <select id="language">
+                            <option value="it">Italiano</option>
+                            <option value="en">English</option>
+                            <option value="es">Español</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="date-format">Formato Data:</label>
+                        <select id="date-format">
+                            <option value="DD/MM/YYYY">GG/MM/AAAA</option>
+                            <option value="MM/DD/YYYY">MM/GG/AAAA</option>
+                            <option value="YYYY-MM-DD">AAAA-MM-GG</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn--secondary" onclick="closeSettings()">Annulla</button>
+                <button class="btn btn--primary" onclick="saveSettings()">Salva Impostazioni</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL IMPORT/EXPORT -->
+    <div class="modal hidden" id="import-export-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>📊 Import/Export Excel</h3>
+                <button class="modal-close" onclick="closeImportExport()">×</button>
+            </div>
+            <div class="modal-body">
+                <h4>📥 Importa da Excel</h4>
+                <div class="form-group">
+                    <label for="excel-import">Seleziona file Excel:</label>
+                    <input type="file" id="excel-import" accept=".xlsx,.xls" onchange="handleExcelImport(this)">
+                </div>
+                <div class="form-group">
+                    <small>Formato richiesto: Nome, Email, Telefono, Specializzazione, Livello, Preposto</small>
+                </div>
+
+                <hr>
+
+                <h4>📤 Esporta in Excel</h4>
+                <div class="form-group">
+                    <button class="btn btn--primary" onclick="exportToExcel()">💾 Esporta Dipendenti</button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn--secondary" onclick="closeImportExport()">Chiudi</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
