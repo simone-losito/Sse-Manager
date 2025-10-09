@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Regno delle Costruzioni - Gestione Cantieri</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+:root {
+  --color-white: rgba(255, 255, 255, 1);
+  --color-cream-50: rgba(252, 252, 249, 1);
+  --color-cream-100: rgba(255, 255, 253, 1);
+  --color-gray-200: rgba(245, 245, 245, 1);
+  --color-gray-300: rgba(167, 169, 169, 1);
+  --color-brown-600: rgba(94, 82, 64, 1);
+  --color-charcoal-700: rgba(31, 33, 33, 1);
+  --color-teal-500: rgba(33, 128, 141, 1);
+  --color-teal-700: rgba(26, 104, 115, 1);
+  --color-teal-300: rgba(50, 184, 198, 1);
+  --color-red-400: rgba(255, 84, 89, 1);
+  --color-slate-500: rgba(98, 108, 113, 1);
+  --color-bg-1: rgba(59, 130, 246, 0.08);
+  --color-bg-3: rgba(34, 197, 94, 0.08);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Georgia', serif;
+  background-color: var(--color-cream-50);
+  color: var(--color-charcoal-700);
+  line-height: 1.6;
+}
+
+.hidden { display: none !important; }
+
+/* LOGIN SCREEN */
+.login-screen {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, var(--color-brown-600) 0%, var(--color-teal-500) 100%);
+  text-align: center;
+  padding: 2rem;
+}
+
+.login-screen h1 {
+  font-size: 3rem;
+  color: white;
+  margin-bottom: 1rem;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.login-screen p {
+  font-size: 1.2rem;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 2rem;
+}
+
+/* BUTTONS */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.btn--primary {
+  background-color: var(--color-brown-600);
+  color: white;
+}
+
+.btn--primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(94, 82, 64, 0.4);
+}
+
+.btn--secondary {
+  background-color: var(--color-teal-500);
+  color: white;
+}
+
+.btn--secondary:hover {
+  background-color: var(--color-teal-700);
+  transform: translateY(-2px);
+}
+
+.btn--lg {
+  padding: 1rem 2rem;
+  font-size: 1.2rem;
+}
+
+.btn--danger {
+  background-color: var(--color-red-400);
+  color: white;
+}
+
+/* HEADER */
+.header {
+  background: linear-gradient(135deg, var(--color-brown-600) 0%, var(--color-teal-500) 100%);
+  color: white;
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-center h1 {
+  font-size: 2rem;
+  text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+}
+
+/* MENU */
+.menu-container { position: relative; }
+
+.menu-button {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.menu-button:hover { background: rgba(255, 255, 255, 0.2); }
+
+.menu-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(31, 33, 33, 0.15);
+  min-width: 200px;
+  z-index: 1000;
+  margin-top: 0.5rem;
+}
+
+.menu-item {
+  padding: 0.75rem 1rem;
+  color: var(--color-charcoal-700);
+  cursor: pointer;
+  border-bottom: 1px solid var(--color-gray-200);
+}
+
+.menu-item:hover {
+  background-color: var(--color-bg-1);
+  color: var(--color-brown-600);
+}
+
+.menu-separator {
+  height: 1px;
+  background-color: var(--color-gray-200);
+  margin: 0.5rem 0;
+}
+
+/* MAIN CONTENT */
+.main-content {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.search-container {
+  margin-bottom: 1.5rem;
+}
+
+.search-container input {
+  width: 100%;
+  max-width: 400px;
+  padding: 0.75rem;
+  border: 2px solid var(--color-gray-300);
+  border-radius: 8px;
+  font-size: 1rem;
+  background-color: white;
+}
+
+.search-container input:focus {
+  outline: none;
+  border-color: var(--color-brown-600);
+}
+
+.content-layout {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+
+/* SIDEBAR */
+.sidebar {
+  background-color: var(--color-cream-100);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(31, 33, 33, 0.1);
+  overflow: hidden;
+  position: sticky;
+  top: 100px;
+  max-height: calc(100vh - 120px);
+}
+
+.sidebar-header {
+  background: linear-gradient(135deg, var(--color-brown-600) 0%, var(--color-teal-500) 100%);
+  color: white;
+  padding: 1rem;
+  text-align: center;
+}
+
+.sidebar-header h3 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.operai-list {
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
+  padding: 1rem 0;
+}
+
+.operaio-card {
+  background-color: white;
+  margin: 0.5rem;
+  padding: 1rem;
+  border-radius: 8px;
+  border: 2px solid var(--color-gray-300);
+  cursor: grab;
+  transition: all 0.3s ease;
+}
+
+.operaio-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(94, 82, 64, 0.15);
+}
+
+.operaio-card.preposto {
+  border-color: var(--color-teal-500);
+  background: linear-gradient(135deg, var(--color-bg-3) 0%, white 100%);
+}
+
+.operaio-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.operaio-nome {
+  font-weight: bold;
+  color: var(--color-charcoal-700);
+}
+
+.operaio-specializzazione {
+  color: var(--color-slate-500);
+  font-size: 0.9rem;
+}
+
+.operaio-livello {
+  font-size: 0.8rem;
+  color: var(--color-brown-600);
+  font-weight: 600;
+}
+
+/* MAIN SECTION */
+.main-section {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.map-container {
+  background-color: var(--color-cream-100);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(31, 33, 33, 0.1);
+  overflow: hidden;
+}
+
+.map-container h3 {
+  background: linear-gradient(135deg, var(--color-brown-600) 0%, var(--color-teal-500) 100%);
+  color: white;
+  padding: 1rem;
+  margin: 0;
+  text-align: center;
+}
+
+.map-area {
+  position: relative;
+  height: 500px;
+  background: linear-gradient(45deg, #f0f8f0 25%, transparent 25%), 
+              linear-gradient(-45deg, #f0f8f0 25%, transparent 25%), 
+              linear-gradient(45deg, transparent 75%, #f0f8f0 75%), 
+              linear-gradient(-45deg, transparent 75%, #f0f8f0 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+  background-color: white;
+}
+
+.cantiere {
+  position: absolute;
+  background-color: var(--color-teal-300);
+  border: 3px solid var(--color-teal-500);
+  border-radius: 12px;
+  padding: 1rem;
+  min-width: 200px;
+  cursor: move;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 16px rgba(33, 128, 141, 0.2);
+}
+
+.cantiere:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(33, 128, 141, 0.3);
+}
+
+.cantiere-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.cantiere-nome {
+  font-weight: bold;
+  color: var(--color-charcoal-700);
+  font-size: 1.1rem;
+}
+
+.cantiere-tipo {
+  background-color: var(--color-brown-600);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.cantiere-orario {
+  color: var(--color-slate-500);
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.cantiere-operai {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.operaio-assegnato {
+  background-color: white;
+  padding: 0.5rem;
+  border-radius: 6px;
+  border-left: 4px solid var(--color-teal-500);
+  font-size: 0.9rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.operaio-assegnato.preposto {
+  border-left-color: var(--color-teal-700);
+  background: linear-gradient(90deg, var(--color-bg-3) 0%, white 100%);
+}
+
+.rimuovi-operaio {
+  background-color: var(--color-red-400);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* CALENDAR */
+.calendar-section {
+  background-color: var(--color-cream-100);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(31, 33, 33, 0.1);
+  overflow: hidden;
+}
+
+.calendar-section h3 {
+  background: linear-gradient(135deg, var(--color-brown-600) 0%, var(--color-teal-500) 100%);
+  color: white;
+  padding: 1rem;
+  margin: 0;
+  text-align: center;
+}
+
+.calendar-container {
+  padding: 1rem;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.calendar-day {
+  background-color: white;
+  border: 2px solid var(--color-gray-300);
+  border-radius: 8px;
+  padding: 0.75rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 600;
+}
+
+.calendar-day:hover {
+  background-color: var(--color-bg-1);
+  border-color: var(--color-brown-600);
+}
+
+.calendar-day.selected {
+  background-color: var(--color-brown-600);
+  color: white;
+  border-color: var(--color-brown-600);
+}
+
+.calendar-day.today {
+  background-color: var(--color-teal-300);
+  border-color: var(--color-teal-500);
+}
+
+.calendar-day.disabled {
+  background-color: var(--color-gray-200);
+  color: var(--color-slate-500);
+  cursor: not-allowed;
+}
+
+.calendar-header {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.calendar-header-day {
+  text-align: center;
+  font-weight: bold;
+  color: var(--color-brown-600);
+  padding: 0.5rem;
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .content-layout {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .sidebar {
+    position: relative;
+    top: auto;
+    max-height: 300px;
+  }
+  
+  .header {
+    padding: 1rem;
+  }
+  
+  .header-center h1 {
+    font-size: 1.5rem;
+  }
+  
+  .main-content {
+    padding: 1rem;
+  }
+  
+  .login-screen h1 {
+    font-size: 2rem;
+  }
+}
+    </style>
+</head>
+<body>
+    <!-- SCHERMATA LOGIN -->
+    <div class="login-screen" id="login-screen">
+        <h1>🏰 Regno delle Costruzioni</h1>
+        <p>Sistema di Gestione Cantieri e Dipendenti</p>
+        <div class="login-buttons">
+            <button onclick="startApp('manager')" class="btn btn--primary btn--lg">🏰 Accedi al Sistema</button>
+        </div>
+    </div>
+
+    <!-- INTERFACCIA PRINCIPALE -->
+    <div class="main-app hidden" id="main-app">
+        <header class="header">
+            <div class="header-left">
+                <div class="menu-container">
+                    <button class="menu-button" onclick="toggleMenu()">☰ Menu</button>
+                    <div class="menu-dropdown hidden" id="menu-dropdown">
+                        <div class="menu-item" onclick="focusSearchOperai(); closeMenu();">🔍 Cerca Operaio</div>
+                        <div class="menu-item" onclick="focusSearchCantieri(); closeMenu();">🔍 Cerca Cantiere</div>
+                        <div class="menu-separator"></div>
+                        <div class="menu-item" onclick="alert('Funzione in sviluppo'); closeMenu();">👷 Aggiungi Dipendente</div>
+                        <div class="menu-item" onclick="alert('Funzione in sviluppo'); closeMenu();">🏗️ Aggiungi Cantiere</div>
+                        <div class="menu-separator"></div>
+                        <div class="menu-item" onclick="alert('Funzione in sviluppo'); closeMenu();">📊 Import/Export Excel</div>
+                        <div class="menu-item" onclick="alert('Funzione in sviluppo'); closeMenu();">⚙️ Impostazioni</div>
+                    </div>
+                </div>
+            </div>
+            <div class="header-center">
+                <h1>🏰 Regno delle Costruzioni</h1>
+            </div>
+            <div class="header-right">
+                <button onclick="logout()" class="btn btn--secondary">🚪 Esci</button>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <div class="search-container">
+                <input type="text" id="search-operai" placeholder="🔍 Cerca operaio..." oninput="filterOperai(this.value)">
+            </div>
+            <div class="search-container">
+                <input type="text" id="search-cantieri" placeholder="🔍 Cerca cantiere..." oninput="filterCantieri(this.value)">
+            </div>
+
+            <div class="content-layout">
+                <aside class="sidebar">
+                    <div class="sidebar-header">
+                        <h3>👷 Operai Disponibili</h3>
+                    </div>
+                    <div class="operai-list" id="operai-list"></div>
+                </aside>
+
+                <section class="main-section">
+                    <div class="map-container" id="map-container">
+                        <h3>🗺️ Mappa Cantieri</h3>
+                        <div class="map-area" id="map-area"></div>
+                    </div>
+                    <div class="calendar-section">
+                        <h3>📅 Calendario</h3>
+                        <div class="calendar-container" id="calendar-container"></div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script>
+// Ver 1.8 - Sistema di Gestione Cantieri
+let operai = [
+    {id: 1, nome: "Marco Rossi", email: "marco.rossi@cantieri.it", telefono: "333-1234567", specializzazione: "Elettricista", livello: 5, cantiere: 1, avatar: "⚡", preposto: true},
+    {id: 2, nome: "Giuseppe Bianchi", email: "giuseppe.bianchi@cantieri.it", telefono: "335-2345678", specializzazione: "Meccanico", livello: 4, cantiere: 1, avatar: "🔧", preposto: false},
+    {id: 3, nome: "Antonio Verde", email: "antonio.verde@cantieri.it", telefono: "338-3456789", specializzazione: "Elettricista", livello: 3, cantiere: 2, avatar: "⚡", preposto: false},
+    {id: 4, nome: "Francesco Neri", email: "francesco.neri@cantieri.it", telefono: "339-4567890", specializzazione: "Meccanico", livello: 5, cantiere: 2, avatar: "🔧", preposto: true},
+    {id: 5, nome: "Luigi Viola", email: "luigi.viola@cantieri.it", telefono: "340-5678901", specializzazione: "Elettricista", livello: 2, cantiere: null, avatar: "⚡", preposto: false},
+    {id: 6, nome: "Salvatore Blu", email: "salvatore.blu@cantieri.it", telefono: "346-6789012", specializzazione: "Meccanico", livello: 3, cantiere: null, avatar: "🔧", preposto: false}
+];
+
+let cantieri = [
+    {id: 1, nome: "Palazzo Roma Centro", tipo: "Civile", x: 150, y: 200, operai: [1, 2], calendarSelections: {}, timeSlot: {start: "08:00", end: "17:00"}},
+    {id: 2, nome: "Impianto Industriale Ostia", tipo: "Industriale", x: 400, y: 300, operai: [4, 3], calendarSelections: {}, timeSlot: {start: "07:00", end: "16:00"}},
+    {id: 3, nome: "Ristrutturazione Trastevere", tipo: "Residenziale", x: 300, y: 150, operai: [], calendarSelections: {}, timeSlot: {start: "08:30", end: "17:30"}}
+];
+
+// === INIZIALIZZAZIONE ===
+function startApp(mode) {
+    document.getElementById('login-screen').classList.add('hidden');
+    document.getElementById('main-app').classList.remove('hidden');
+    
+    renderOperai();
+    renderCantieri();
+    renderCalendar();
+}
+
+function logout() {
+    document.getElementById('main-app').classList.add('hidden');
+    document.getElementById('login-screen').classList.remove('hidden');
+}
+
+// === RENDERING ===
+function renderOperai() {
+    const operaiList = document.getElementById('operai-list');
+    const availableOperai = operai.filter(o => o.cantiere === null);
+    
+    availableOperai.sort((a, b) => {
+        if (a.preposto && !b.preposto) return -1;
+        if (!a.preposto && b.preposto) return 1;
+        if (a.livello !== b.livello) return b.livello - a.livello;
+        return a.nome.localeCompare(b.nome);
+    });
+    
+    operaiList.innerHTML = availableOperai.map(operaio => `
+        <div class="operaio-card ${operaio.preposto ? 'preposto' : ''}" 
+             draggable="true" 
+             data-id="${operaio.id}">
+            <div class="operaio-info">
+                <div class="operaio-nome">
+                    ${operaio.avatar} ${operaio.nome} ${operaio.preposto ? '⭐' : ''}
+                </div>
+                <div class="operaio-specializzazione">${operaio.specializzazione}</div>
+                <div class="operaio-livello">Livello ${operaio.livello}</div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function renderCantieri() {
+    const mapArea = document.getElementById('map-area');
+    
+    mapArea.innerHTML = cantieri.map(cantiere => {
+        const operaiCantiere = operai.filter(o => o.cantiere === cantiere.id);
+        operaiCantiere.sort((a, b) => {
+            if (a.preposto && !b.preposto) return -1;
+            if (!a.preposto && b.preposto) return 1;
+            if (a.livello !== b.livello) return b.livello - a.livello;
+            return a.nome.localeCompare(b.nome);
+        });
+        
+        return `
+            <div class="cantiere" 
+                 style="left: ${cantiere.x}px; top: ${cantiere.y}px;"
+                 data-id="${cantiere.id}"
+                 ondblclick="alert('Modifica cantiere: ${cantiere.nome}')">
+                <div class="cantiere-header">
+                    <div class="cantiere-nome">${cantiere.nome}</div>
+                    <div class="cantiere-tipo">${cantiere.tipo}</div>
+                </div>
+                <div class="cantiere-orario">⏰ ${cantiere.timeSlot.start} - ${cantiere.timeSlot.end}</div>
+                <div class="cantiere-operai">
+                    ${operaiCantiere.map(operaio => `
+                        <div class="operaio-assegnato ${operaio.preposto ? 'preposto' : ''}">
+                            <span>${operaio.avatar} ${operaio.nome} ${operaio.preposto ? '⭐' : ''}</span>
+                            <button class="rimuovi-operaio" onclick="rimuoviOperaioDaCantiere(${operaio.id})">×</button>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function renderCalendar() {
+    const calendarContainer = document.getElementById('calendar-container');
+    const today = new Date();
+    const currentMonth = today.getMonth();
+    const currentYear = today.getFullYear();
+    
+    const firstDay = new Date(currentYear, currentMonth, 1);
+    const startDate = new Date(firstDay);
+    startDate.setDate(startDate.getDate() - firstDay.getDay());
+    
+    const monthNames = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno',
+                       'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'];
+    
+    let calendarHTML = `
+        <div class="calendar-month">
+            <h4>${monthNames[currentMonth]} ${currentYear}</h4>
+        </div>
+        <div class="calendar-header">
+            <div class="calendar-header-day">Dom</div>
+            <div class="calendar-header-day">Lun</div>
+            <div class="calendar-header-day">Mar</div>
+            <div class="calendar-header-day">Mer</div>
+            <div class="calendar-header-day">Gio</div>
+            <div class="calendar-header-day">Ven</div>
+            <div class="calendar-header-day">Sab</div>
+        </div>
+        <div class="calendar-grid">
+    `;
+    
+    for (let i = 0; i < 42; i++) {
+        const date = new Date(startDate);
+        date.setDate(startDate.getDate() + i);
+        
+        const isToday = date.toDateString() === today.toDateString();
+        const isCurrentMonth = date.getMonth() === currentMonth;
+        const dayKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        
+        calendarHTML += `
+            <div class="calendar-day ${isToday ? 'today' : ''} ${!isCurrentMonth ? 'disabled' : ''}" 
+                 data-date="${dayKey}" 
+                 onclick="toggleCalendarDay('${dayKey}')">
+                ${date.getDate()}
+            </div>
+        `;
+    }
+    
+    calendarHTML += '</div>';
+    calendarContainer.innerHTML = calendarHTML;
+}
+
+function rimuoviOperaioDaCantiere(operaioId) {
+    const operaio = operai.find(o => o.id === operaioId);
+    if (operaio) {
+        operaio.cantiere = null;
+        renderOperai();
+        renderCantieri();
+    }
+}
+
+// === MENU ===
+function toggleMenu() {
+    const dropdown = document.getElementById('menu-dropdown');
+    dropdown.classList.toggle('hidden');
+}
+
+function closeMenu() {
+    const dropdown = document.getElementById('menu-dropdown');
+    dropdown.classList.add('hidden');
+}
+
+// === RICERCA ===
+function focusSearchOperai() {
+    document.getElementById('search-operai').focus();
+}
+
+function focusSearchCantieri() {
+    document.getElementById('search-cantieri').focus();
+}
+
+function filterOperai(query) {
+    const operaiCards = document.querySelectorAll('.operaio-card');
+    operaiCards.forEach(card => {
+        const nome = card.querySelector('.operaio-nome').textContent.toLowerCase();
+        const specializzazione = card.querySelector('.operaio-specializzazione').textContent.toLowerCase();
+        
+        if (nome.includes(query.toLowerCase()) || specializzazione.includes(query.toLowerCase())) {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+
+function filterCantieri(query) {
+    const cantiereCards = document.querySelectorAll('.cantiere');
+    cantiereCards.forEach(card => {
+        const nome = card.querySelector('.cantiere-nome').textContent.toLowerCase();
+        const tipo = card.querySelector('.cantiere-tipo').textContent.toLowerCase();
+        
+        if (nome.includes(query.toLowerCase()) || tipo.includes(query.toLowerCase())) {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+
+function toggleCalendarDay(dayKey) {
+    const dayElement = document.querySelector(`[data-date="${dayKey}"]`);
+    if (dayElement.classList.contains('disabled')) return;
+    
+    dayElement.classList.toggle('selected');
+}
+
+// === EVENTI GLOBALI ===
+document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('click', function(event) {
+        if (!event.target.closest('.menu-container')) {
+            closeMenu();
+        }
+    });
+});
+    </script>
+</body>
+</html>
