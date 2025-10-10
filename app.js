@@ -1,90 +1,131 @@
-// ===== SSE MANAGER - VERSIONE GITHUB PAGES OTTIMIZZATA =====
 "use strict";
 
-// Polyfill per browser vecchi
+// ===== ERROR HANDLING GLOBALE =====
+window.onerror = function(message, source, lineno, colno, error) {
+    console.error('🔴 JavaScript Error:', {
+        message: message,
+        source: source,
+        line: lineno,
+        column: colno,
+        error: error
+    });
+    // Non bloccare l'esecuzione
+    return true;
+};
+
+// ===== POLYFILL PER COMPATIBILITÀ =====
 if (!Array.prototype.includes) {
     Array.prototype.includes = function(searchElement) {
         return this.indexOf(searchElement) !== -1;
     };
 }
 
-// Riduzione drastica console.log per performance
-const DEBUG = false;
-const log = DEBUG ? console.log.bind(console) : function() {};
+if (!Array.prototype.find) {
+    Array.prototype.find = function(predicate) {
+        for (var i = 0; i < this.length; i++) {
+            if (predicate(this[i], i, this)) return this[i];
+        }
+        return undefined;
+    };
+}
+
+// ===== UTILITIES =====
+const log = console.log.bind(console);
 const error = console.error.bind(console);
 
-// Gestione errori globale
-window.onerror = function(msg, url, lineNo, columnNo, error) {
-    console.error('JavaScript Error:', {
-        message: msg,
-        source: url,
-        line: lineNo,
-        column: columnNo,
-        error: error
-    });
-    return false;
-};
-
-// Loading indicator
-function showLoading() {
-    const loader = document.createElement('div');
-    loader.id = 'app-loader';
-    loader.innerHTML = `
-        <div style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:10000;display:flex;align-items:center;justify-content:center;color:white;font-size:18px;">
-            🏗️ Caricamento Sse Manager...
-        </div>
-    `;
-    document.body.appendChild(loader);
-}
-
-function hideLoading() {
-    const loader = document.getElementById('app-loader');
-    if (loader) loader.remove();
-}
-
-// Inizializzazione sicura
-document.addEventListener('DOMContentLoaded', function() {
-    try {
-        showLoading();
-        initializeApp();
-        setTimeout(hideLoading, 1000);
-    } catch (error) {
-        console.error('Errore inizializzazione:', error);
-        hideLoading();
-        alert('Errore di caricamento. Ricarica la pagina.');
+// ===== INIZIALIZZAZIONE SICURA =====
+(function() {
+    // Attende che il DOM sia completamente caricato
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initApp);
+    } else {
+        initApp();
     }
-});
 
-function initializeApp() {
-    log('🚀 Inizializzazione App');
-    setupEventListeners();
-    loadFromStorage();
-    renderApp();
-}
+    function initApp() {
+        log('🚀 Inizializzazione Sse Manager');
 
-// Feature detection per compatibilità
-function isFeatureSupported() {
+        // Verifica compatibilità browser
+        if (!isCompatible()) {
+            alert('⚠️ Browser non completamente supportato. Alcune funzionalità potrebbero non funzionare.');
+        }
+
+        // Carica configurazione salvata
+        loadFromStorage();
+
+        // Setup event listeners
+        setupEventListeners();
+
+        log('✅ App inizializzata con successo');
+    }
+
+    function isCompatible() {
+        try {
+            // Test localStorage
+            localStorage.setItem('test', 'test');
+            localStorage.removeItem('test');
+
+            // Test JSON
+            JSON.parse('{}');
+            JSON.stringify({});
+
+            return true;
+        } catch (e) {
+            error('Browser non supporta funzionalità richieste:', e);
+            return false;
+        }
+    }
+})();
+
+// ===== STORAGE MANAGEMENT =====
+function saveToStorage() {
     try {
-        // Test localStorage
-        localStorage.setItem('test', 'test');
-        localStorage.removeItem('test');
-
-        // Test JSON
-        JSON.parse('{}');
-
-        // Test ES6 features critiche
-        const test = () => true;
-        const template = `test`;
-
-        return true;
+        localStorage.setItem('sseManager_operai', JSON.stringify(operai));
+        localStorage.setItem('sseManager_cantieri', JSON.stringify(cantieri));
+        localStorage.setItem('sseManager_emailConfig', JSON.stringify(emailConfig));
+        localStorage.setItem('sseManager_generalConfig', JSON.stringify(generalConfig));
+        log('💾 Dati salvati');
     } catch (e) {
-        return false;
+        error('Errore salvataggio:', e);
     }
 }
 
-// Fallback per browser non supportati
-if (!isFeatureSupported()) {
-    alert('Browser non supportato. Aggiorna il browser per utilizzare Sse Manager.');
+function loadFromStorage() {
+    try {
+        const savedOperai = localStorage.getItem('sseManager_operai');
+        const savedCantieri = localStorage.getItem('sseManager_cantieri');
+        const savedEmailConfig = localStorage.getItem('sseManager_emailConfig');
+        const savedGeneralConfig = localStorage.getItem('sseManager_generalConfig');
+
+        if (savedOperai) operai = JSON.parse(savedOperai);
+        if (savedCantieri) cantieri = JSON.parse(savedCantieri);
+        if (savedEmailConfig) emailConfig = Object.assign({}, emailConfig, JSON.parse(savedEmailConfig));
+        if (savedGeneralConfig) generalConfig = Object.assign({}, generalConfig, JSON.parse(savedGeneralConfig));
+
+        log('📂 Dati caricati da storage');
+    } catch (e) {
+        error('Errore caricamento:', e);
+    }
+}
+
+// ===== EVENT LISTENERS =====
+function setupEventListeners() {
+    log('🔧 Setup event listeners');
+
+    // Gestione ESC per chiudere modal
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            const modals = document.querySelectorAll('.modal:not(.hidden)');
+            modals.forEach(function(modal) {
+                modal.classList.add('hidden');
+            });
+        }
+    });
+
+    // Auto-save periodico
+    setInterval(function() {
+        saveToStorage();
+    }, 30000); // Ogni 30 secondi
 }
 
 // app.js - Sse Manager Ver 1.8 COMPLETA
@@ -142,13 +183,13 @@ let generalConfig = {
 
 // ===== FUNZIONI LOGIN =====
 function loginMaster() {
-    log('👑 LOGIN MASTER');
+    console.log('👑 LOGIN MASTER');
     currentMode = 'master';
     startApp();
 }
 
 function startApp() {
-    log('🚀 STARTING APP');
+    console.log('🚀 STARTING APP');
     document.getElementById('login-screen').classList.add('hidden');
     document.getElementById('main-app').classList.remove('hidden');
     document.getElementById('mode-text').textContent = 'Modalità: Manager';
@@ -156,7 +197,7 @@ function startApp() {
 }
 
 function logout() {
-    log('👋 LOGOUT');
+    console.log('👋 LOGOUT');
     document.getElementById('main-app').classList.add('hidden');
     document.getElementById('login-screen').classList.remove('hidden');
     closeMenu();
@@ -164,7 +205,7 @@ function logout() {
 
 // ===== FUNZIONI MENU =====
 function toggleMenu() {
-    log('🔘 Toggle menu');
+    console.log('🔘 Toggle menu');
     const dropdown = document.getElementById('menu-dropdown');
     if (dropdown) {
         dropdown.classList.toggle('hidden');
@@ -172,7 +213,7 @@ function toggleMenu() {
 }
 
 function closeMenu() {
-    log('❌ Close menu');
+    console.log('❌ Close menu');
     const dropdown = document.getElementById('menu-dropdown');
     if (dropdown) {
         dropdown.classList.add('hidden');
@@ -180,7 +221,7 @@ function closeMenu() {
 }
 
 function focusSearchOperai() {
-    log('🔍 Focus search operai');
+    console.log('🔍 Focus search operai');
     const input = document.getElementById('search-operai');
     if (input) {
         input.focus();
@@ -189,7 +230,7 @@ function focusSearchOperai() {
 }
 
 function focusSearchCantieri() {
-    log('🔍 Focus search cantieri');
+    console.log('🔍 Focus search cantieri');
     const input = document.getElementById('search-cantieri');
     if (input) {
         input.focus();
@@ -199,7 +240,7 @@ function focusSearchCantieri() {
 
 // ===== FUNZIONI IMPOSTAZIONI =====
 function openSettings() {
-    log('⚙️ OPEN SETTINGS');
+    console.log('⚙️ OPEN SETTINGS');
     loadEmailSettings();
     loadGeneralSettings();
     document.getElementById('modal-settings').classList.remove('hidden');
@@ -207,7 +248,7 @@ function openSettings() {
 }
 
 function openGeneralSettings() {
-    log('🌐 OPEN GENERAL SETTINGS');
+    console.log('🌐 OPEN GENERAL SETTINGS');
     loadEmailSettings();
     loadGeneralSettings();
     document.getElementById('modal-settings').classList.remove('hidden');
@@ -215,12 +256,12 @@ function openGeneralSettings() {
 }
 
 function closeSettings() {
-    log('❌ CLOSE SETTINGS');
+    console.log('❌ CLOSE SETTINGS');
     document.getElementById('modal-settings').classList.add('hidden');
 }
 
 function showSettingsTab(tabName) {
-    log('📋 SHOW SETTINGS TAB:', tabName);
+    console.log('📋 SHOW SETTINGS TAB:', tabName);
     
     document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
@@ -230,7 +271,7 @@ function showSettingsTab(tabName) {
 }
 
 function loadEmailSettings() {
-    log('📧 LOAD EMAIL SETTINGS');
+    console.log('📧 LOAD EMAIL SETTINGS');
     document.getElementById('smtp-server').value = emailConfig.smtpServer || '';
     document.getElementById('smtp-port').value = emailConfig.smtpPort || '';
     document.getElementById('sender-email').value = emailConfig.senderEmail || '';
@@ -241,7 +282,7 @@ function loadEmailSettings() {
 }
 
 function loadGeneralSettings() {
-    log('🌐 LOAD GENERAL SETTINGS');
+    console.log('🌐 LOAD GENERAL SETTINGS');
     document.getElementById('company-name').value = generalConfig.companyName || 'Sse Manager';
     document.getElementById('timezone').value = generalConfig.timezone || 'Europe/Rome';
     document.getElementById('language').value = generalConfig.language || 'it';
@@ -249,7 +290,7 @@ function loadGeneralSettings() {
 }
 
 function saveEmailSettings() {
-    log('💾 SAVE EMAIL SETTINGS');
+    console.log('💾 SAVE EMAIL SETTINGS');
     
     try {
         const smtpServer = document.getElementById('smtp-server').value.trim();
@@ -284,7 +325,7 @@ function saveEmailSettings() {
 }
 
 function saveGeneralSettings() {
-    log('💾 SAVE GENERAL SETTINGS');
+    console.log('💾 SAVE GENERAL SETTINGS');
     
     try {
         generalConfig = {
@@ -303,7 +344,7 @@ function saveGeneralSettings() {
 }
 
 function testEmailConnection() {
-    log('🔧 TEST EMAIL CONNECTION');
+    console.log('🔧 TEST EMAIL CONNECTION');
     
     if (!emailConfig.smtpServer || !emailConfig.smtpPort || !emailConfig.senderEmail) {
         alert('⚠️ Configura prima i parametri email obbligatori');
@@ -330,7 +371,7 @@ function testEmailConnection() {
 }
 
 function resetEmailSettings() {
-    log('🔄 RESET EMAIL SETTINGS');
+    console.log('🔄 RESET EMAIL SETTINGS');
     
     if (confirm('Vuoi ripristinare le impostazioni email ai valori di default?')) {
         emailConfig = {
@@ -349,7 +390,7 @@ function resetEmailSettings() {
 }
 
 function resetGeneralSettings() {
-    log('🔄 RESET GENERAL SETTINGS');
+    console.log('🔄 RESET GENERAL SETTINGS');
     
     if (confirm('Vuoi ripristinare le impostazioni generali ai valori di default?')) {
         generalConfig = {
@@ -366,7 +407,7 @@ function resetGeneralSettings() {
 
 // ===== FUNZIONI LISTE =====
 function showOperaiList() {
-    log('👷 SHOW OPERAI LIST');
+    console.log('👷 SHOW OPERAI LIST');
     
     let message = '👷 LISTA COMPLETA DIPENDENTI:\n\n';
     
@@ -385,7 +426,7 @@ function showOperaiList() {
 }
 
 function showCantieriList() {
-    log('🏗️ SHOW CANTIERI LIST');
+    console.log('🏗️ SHOW CANTIERI LIST');
     
     let message = '🏗️ LISTA COMPLETA CANTIERI:\n\n';
     
@@ -414,7 +455,7 @@ function showCantieriList() {
 }
 
 function showModifyCantiereMenu() {
-    log('✏️ Mostra menu modifica cantiere');
+    console.log('✏️ Mostra menu modifica cantiere');
     
     if (cantieri.length === 0) {
         alert('Nessun cantiere disponibile da modificare');
@@ -438,7 +479,7 @@ function showModifyCantiereMenu() {
 }
 
 function showDeleteCantiereMenu() {
-    log('🗑️ Mostra menu elimina cantiere');
+    console.log('🗑️ Mostra menu elimina cantiere');
     
     if (cantieri.length === 0) {
         alert('Nessun cantiere disponibile da eliminare');
@@ -515,7 +556,7 @@ function renderOperai() {
         `;
         
         card.ondragstart = function(e) {
-            log('🔥 DRAG START - Operaio:', operaio.nome);
+            console.log('🔥 DRAG START - Operaio:', operaio.nome);
             draggedOperaio = operaio;
             isDragDropActive = true;
             e.dataTransfer.effectAllowed = 'move';
@@ -525,7 +566,7 @@ function renderOperai() {
         };
         
         card.ondragend = function(e) {
-            log('🔥 DRAG END');
+            console.log('🔥 DRAG END');
             card.style.opacity = '1';
             setTimeout(() => {
                 isDragDropActive = false;
@@ -580,7 +621,7 @@ function renderCantieri() {
             e.preventDefault();
             e.dataTransfer.dropEffect = 'move';
             if (draggedOperaio && isDragDropActive) {
-                log('🔥 DRAG OVER - Cantiere:', cantiere.nome);
+                console.log('🔥 DRAG OVER - Cantiere:', cantiere.nome);
                 element.classList.add('drag-over');
             }
             e.stopPropagation();
@@ -608,11 +649,11 @@ function renderCantieri() {
         element.ondrop = function(e) {
             e.preventDefault();
             e.stopPropagation();
-            log('🔥 DROP EVENT - Cantiere:', cantiere.nome, 'isDragDropActive:', isDragDropActive);
+            console.log('🔥 DROP EVENT - Cantiere:', cantiere.nome, 'isDragDropActive:', isDragDropActive);
             element.classList.remove('drag-over');
             
             if (draggedOperaio && isDragDropActive) {
-                log('🔥 ASSIGNING:', draggedOperaio.nome, 'to', cantiere.nome);
+                console.log('🔥 ASSIGNING:', draggedOperaio.nome, 'to', cantiere.nome);
                 assignOperaio(draggedOperaio.id, cantiere.id);
                 
                 const feedback = document.createElement('div');
@@ -662,7 +703,7 @@ function renderCantieri() {
 
 // ===== FUNZIONI OPERAI =====
 function addOperaio() {
-    log('➕ ADD OPERAIO');
+    console.log('➕ ADD OPERAIO');
     document.getElementById('modal-operaio-title').textContent = 'Aggiungi Operaio';
     document.getElementById('form-operaio').reset();
     document.getElementById('operaio-id').value = '';
@@ -675,7 +716,7 @@ function addOperaio() {
 }
 
 function editOperaio(operaioId) {
-    log('✏️ EDIT OPERAIO:', operaioId);
+    console.log('✏️ EDIT OPERAIO:', operaioId);
     const operaio = operai.find(o => o.id === operaioId);
     if (!operaio) return;
     
@@ -697,7 +738,7 @@ function editOperaio(operaioId) {
 }
 
 function saveOperaio() {
-    log('💾 SAVE OPERAIO');
+    console.log('💾 SAVE OPERAIO');
     
     const id = document.getElementById('operaio-id').value;
     const nome = document.getElementById('operaio-nome').value.trim();
@@ -757,7 +798,7 @@ function saveOperaio() {
 }
 
 function removeOperaio(operaioId) {
-    log('🗑️ REMOVE OPERAIO:', operaioId);
+    console.log('🗑️ REMOVE OPERAIO:', operaioId);
     
     const operaio = operai.find(o => o.id === operaioId);
     if (!operaio) return;
@@ -779,14 +820,14 @@ function removeOperaio(operaioId) {
 }
 
 function closeModal() {
-    log('❌ CLOSE MODAL');
+    console.log('❌ CLOSE MODAL');
     document.getElementById('modal-operaio').classList.add('hidden');
     document.getElementById('modal-cantiere').classList.add('hidden');
 }
 
 // ===== FUNZIONI CANTIERI =====
 function addCantiere() {
-    log('➕ ADD CANTIERE');
+    console.log('➕ ADD CANTIERE');
     document.getElementById('modal-cantiere-title').textContent = 'Aggiungi Cantiere';
     document.getElementById('form-cantiere').reset();
     document.getElementById('cantiere-id').value = '';
@@ -799,7 +840,7 @@ function addCantiere() {
 }
 
 function editCantiere(cantiereId) {
-    log('✏️ EDIT CANTIERE:', cantiereId);
+    console.log('✏️ EDIT CANTIERE:', cantiereId);
     const cantiere = cantieri.find(c => c.id === cantiereId);
     if (!cantiere) return;
     
@@ -817,7 +858,7 @@ function editCantiere(cantiereId) {
 }
 
 function saveCantiere() {
-    log('💾 SAVE CANTIERE');
+    console.log('💾 SAVE CANTIERE');
     
     const id = document.getElementById('cantiere-id').value;
     const nome = document.getElementById('cantiere-nome').value.trim();
@@ -855,7 +896,7 @@ function saveCantiere() {
 }
 
 function removeCantiere(cantiereId) {
-    log('🗑️ REMOVE CANTIERE:', cantiereId);
+    console.log('🗑️ REMOVE CANTIERE:', cantiereId);
     
     const cantiere = cantieri.find(c => c.id === cantiereId);
     if (!cantiere) return;
@@ -881,7 +922,7 @@ function removeCantiere(cantiereId) {
 
 // ===== FUNZIONI ASSEGNAZIONE =====
 function assignOperaio(operaioId, cantiereId) {
-    log('🔗 ASSIGN OPERAIO:', operaioId, 'to', cantiereId);
+    console.log('🔗 ASSIGN OPERAIO:', operaioId, 'to', cantiereId);
     
     const operaio = operai.find(o => o.id === operaioId);
     const cantiere = cantieri.find(c => c.id === cantiereId);
@@ -906,7 +947,7 @@ function assignOperaio(operaioId, cantiereId) {
 }
 
 function unassignOperaio(operaioId, cantiereId) {
-    log('🔓 UNASSIGN OPERAIO:', operaioId, 'from', cantiereId);
+    console.log('🔓 UNASSIGN OPERAIO:', operaioId, 'from', cantiereId);
     
     const operaio = operai.find(o => o.id === operaioId);
     const cantiere = cantieri.find(c => c.id === cantiereId);
@@ -921,7 +962,7 @@ function unassignOperaio(operaioId, cantiereId) {
 
 // ===== FUNZIONI DETTAGLI CANTIERE =====
 function showCantiereDetails(cantiereId) {
-    log('📋 SHOW CANTIERE DETAILS:', cantiereId);
+    console.log('📋 SHOW CANTIERE DETAILS:', cantiereId);
     
     const cantiere = cantieri.find(c => c.id === cantiereId);
     if (!cantiere) return;
@@ -970,7 +1011,7 @@ function showCantiereDetails(cantiereId) {
 }
 
 function closeCantiereModal() {
-    log('❌ CLOSE CANTIERE MODAL');
+    console.log('❌ CLOSE CANTIERE MODAL');
     document.getElementById('modal-cantiere-details').classList.add('hidden');
     currentCantiereId = null;
 }
@@ -1032,7 +1073,7 @@ function isCalendarDaySelected(date) {
 }
 
 function toggleCalendarDay(dateStr) {
-    log('📅 TOGGLE CALENDAR DAY:', dateStr);
+    console.log('📅 TOGGLE CALENDAR DAY:', dateStr);
     
     if (!currentCantiereId) return;
     
@@ -1050,7 +1091,7 @@ function toggleCalendarDay(dateStr) {
 }
 
 function changeMonth(direction) {
-    log('📅 CHANGE MONTH:', direction);
+    console.log('📅 CHANGE MONTH:', direction);
     
     currentMonth += direction;
     
@@ -1067,7 +1108,7 @@ function changeMonth(direction) {
 
 // ===== FUNZIONI ORARIO =====
 function handleTimeChange() {
-    log('⏰ HANDLE TIME CHANGE');
+    console.log('⏰ HANDLE TIME CHANGE');
     
     if (!currentCantiereId) return;
     
@@ -1084,11 +1125,11 @@ function handleTimeChange() {
     cantiere.timeSlot.start = startTime;
     cantiere.timeSlot.end = endTime;
     
-    log('⏰ Updated time slot:', cantiere.timeSlot);
+    console.log('⏰ Updated time slot:', cantiere.timeSlot);
 }
 
 function updateCantiereTimeSlot(cantiereId, start, end) {
-    log('⏰ UPDATE CANTIERE TIME SLOT:', cantiereId, start, end);
+    console.log('⏰ UPDATE CANTIERE TIME SLOT:', cantiereId, start, end);
     
     const cantiere = cantieri.find(c => c.id === cantiereId);
     if (!cantiere) return;
@@ -1103,7 +1144,7 @@ function updateCantiereTimeSlot(cantiereId, start, end) {
 
 // ===== FUNZIONI EMAIL =====
 function sendParticipationEmails() {
-    log('📤 SEND PARTICIPATION EMAILS');
+    console.log('📤 SEND PARTICIPATION EMAILS');
     
     if (!currentCantiereId) return;
     
@@ -1146,7 +1187,7 @@ function sendParticipationEmails() {
         
         let emailsSent = 0;
         operaiAssegnati.forEach(operaio => {
-            log(`📧 Sending email to: ${operaio.nome} (${operaio.email})`);
+            console.log(`📧 Sending email to: ${operaio.nome} (${operaio.email})`);
             emailsSent++;
         });
         
@@ -1203,79 +1244,14 @@ window.updateCantiereTimeSlot = updateCantiereTimeSlot;
 window.sendParticipationEmails = sendParticipationEmails;
 window.changeMonth = changeMonth;
 
-log('🏗️ Sse Manager - Ver 1.8 COMPLETA caricata!');
-log('✅ Tutte le funzionalità operative!');
-// ===== GESTIONE EVENTI CON ADDEVENTLISTENER =====
-function setupEventListenersImproved() {
-    log('🔧 Setup event listeners migliorati');
+console.log('🏗️ Sse Manager - Ver 1.8 COMPLETA caricata!');
+console.log('✅ Tutte le funzionalità operative!');
 
-    // Trova tutti gli elementi con data-onclick e aggiungi event listeners
-    const elementsWithEvents = document.querySelectorAll('[data-onclick]');
+// ===== FUNZIONI AGGIUNTIVE PER COMPATIBILITÀ =====
+// Assicura che tutte le funzioni siano accessibili globalmente
+window.saveToStorage = saveToStorage;
+window.loadFromStorage = loadFromStorage;
 
-    elementsWithEvents.forEach(function(element) {
-        const eventCode = element.getAttribute('data-onclick');
-
-        element.addEventListener('click', function(event) {
-            try {
-                // Valuta il codice dell'evento in modo sicuro
-                const func = new Function('event', eventCode);
-                func.call(this, event);
-            } catch (error) {
-                console.error('Errore evento click:', error, eventCode);
-            }
-        });
-
-        // Rimuovi l'attributo data-onclick dopo aver aggiunto il listener
-        element.removeAttribute('data-onclick');
-    });
-
-    // Event listeners per form submissions
-    const forms = document.querySelectorAll('form');
-    forms.forEach(function(form) {
-        form.addEventListener('submit', function(event) {
-            event.preventDefault();
-
-            if (form.id === 'form-operaio') {
-                saveOperaio();
-            } else if (form.id === 'form-cantiere') {
-                saveCantiere();
-            }
-        });
-    });
-
-    // Gestione tasti scorciatoia
-    document.addEventListener('keydown', function(event) {
-        // ESC per chiudere modal
-        if (event.key === 'Escape') {
-            const modals = document.querySelectorAll('.modal:not(.hidden)');
-            modals.forEach(function(modal) {
-                closeModal(modal.id);
-            });
-        }
-
-        // Ctrl+S per salvare (se in un form)
-        if (event.ctrlKey && event.key === 's') {
-            event.preventDefault();
-            const activeForm = document.querySelector('form:not(.hidden)');
-            if (activeForm) {
-                activeForm.dispatchEvent(new Event('submit'));
-            }
-        }
-    });
-
-    // Auto-save periodico
-    setInterval(function() {
-        if (typeof saveToStorage === 'function') {
-            saveToStorage();
-        }
-    }, 30000); // Ogni 30 secondi
-}
-
-// Override della funzione di setup originale
-const originalSetupEventListeners = setupEventListeners;
-setupEventListeners = function() {
-    if (typeof originalSetupEventListeners === 'function') {
-        originalSetupEventListeners();
-    }
-    setupEventListenersImproved();
-};
+// Log finale
+log('🏗️ Sse Manager Ver 1.8 - GITHUB PAGES EDITION');
+log('✅ Tutte le funzionalità caricate correttamente');
