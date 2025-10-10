@@ -1,62 +1,54 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Sse Manager</title>
-  <link rel="stylesheet" href="styles.css"/>
+  <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"/>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css"/>
 </head>
-<body class="rpg-background">
-  <nav class="menu-rpg">
-    <ul>
-      <li class="menu-item">🏰 Cantieri</li>
-      <li class="menu-item">👷 Personaggi</li>
-      <li class="menu-item">⚙️ Impostazioni</li>
-    </ul>
-  </nav>
+<body>
+  <header>
+    <h1>Sse Manager</h1>
+    <button id="login-btn">Entra come Manager</button>
+  </header>
 
-  <main class="container">
-    <section id="workers-section" class="card-mode">
-      <h2>👥 Personaggi</h2>
-      <button id="add-worker-btn" class="btn-rpg">➕ Aggiungi</button>
-      <div id="workers-list" class="cards-grid"></div>
-    </section>
-
-    <section id="sites-section" class="card-mode">
-      <h2>🏯 Monumenti</h2>
-      <button id="add-site-btn" class="btn-rpg">➕ Aggiungi</button>
-      <div id="map" class="map-panel"></div>
-    </section>
-
-    <dialog id="detail-dialog" class="dialog-rpg">
-      <h3 id="detail-title"></h3>
-      <div id="assigned-workers" class="cards-grid"></div>
-      <div id="calendar"></div>
-      <button id="send-mail-btn" class="btn-rpg">📧 Invia Inviti</button>
-      <button id="close-detail-btn" class="btn-rpg">❌ Chiudi</button>
-    </dialog>
-  </main>
-
-  <template id="worker-card">
-    <div class="card worker-card" draggable="true">
-      <div class="card-art">
-        <img src="images/worker-placeholder.png" alt="Ritratto"/>
-      </div>
-      <div class="card-info">
-        <h4 class="worker-name"></h4>
-        <p class="worker-role"></p>
-      </div>
+  <aside id="sidebar">
+    <div id="workers-panel">
+      <h2>Operai Disponibili</h2>
+      <button id="add-worker-btn">Aggiungi Operaio</button>
+      <ul id="workers-list"></ul>
     </div>
-  </template>
+    <div id="sites-panel">
+      <h2>Cantieri</h2>
+      <button id="add-site-btn">Aggiungi Cantiere</button>
+      <div id="map" style="height:400px"></div>
+    </div>
+  </aside>
 
-  <template id="site-marker">
-    <div class="marker site-marker"></div>
+  <dialog id="detail-dialog">
+    <h3 id="detail-title">Dettagli Cantiere</h3>
+    <section>
+      <h4>Operai Assegnati</h4>
+      <ul id="assigned-workers"></ul>
+    </section>
+    <section>
+      <h4>Orario di Lavoro</h4>
+      Inizio: <input type="datetime-local" id="start-time"><br>
+      Fine: <input type="datetime-local" id="end-time"><br>
+    </section>
+    <button id="send-mail-btn">Invia Email</button>
+    <button id="close-detail-btn">Chiudi</button>
+  </dialog>
+
+  <template id="worker-item">
+    <li class="worker-item" draggable="true">
+      <span class="worker-name"></span>
+      <span class="worker-email"></span>
+    </li>
   </template>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
