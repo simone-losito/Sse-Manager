@@ -2,11 +2,10 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="theme-color" content="#21808d">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🏗️ Sse Manager</title>
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="robots" content="noindex, nofollow">
-    <meta name="theme-color" content="#21808d">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -15,7 +14,7 @@
         <div class="login-container">
             <h1>🏗️ Sse Manager</h1>
             <p class="subtitle">Sviluppato e pensato da Simone Losito</p>
-            <button data-onclick="loginMaster()" class="btn btn-primary">🚀 Entra come Manager</button>
+            <button onclick="loginMaster()" class="btn btn-primary">🚀 Entra come Manager</button>
         </div>
     </div>
 
@@ -29,21 +28,21 @@
             </div>
             <div class="header-right">
                 <div class="menu-container">
-                    <button data-onclick="toggleMenu()" class="menu-btn">☰ Menu</button>
+                    <button onclick="toggleMenu()" class="menu-btn">☰ Menu</button>
                     <div id="menu-dropdown" class="menu-dropdown hidden">
-                        <div class="menu-item" data-onclick="focusSearchOperai()">🔍 Cerca Operai</div>
-                        <div class="menu-item" data-onclick="focusSearchCantieri()">🔍 Cerca Cantieri</div>
+                        <div class="menu-item" onclick="focusSearchOperai()">🔍 Cerca Operai</div>
+                        <div class="menu-item" onclick="focusSearchCantieri()">🔍 Cerca Cantieri</div>
                         <div class="menu-separator"></div>
-                        <div class="menu-item" data-onclick="showOperaiList()">👷 Lista Operai</div>
-                        <div class="menu-item" data-onclick="showCantieriList()">🏗️ Lista Cantieri</div>
+                        <div class="menu-item" onclick="showOperaiList()">👷 Lista Operai</div>
+                        <div class="menu-item" onclick="showCantieriList()">🏗️ Lista Cantieri</div>
                         <div class="menu-separator"></div>
-                        <div class="menu-item" data-onclick="showModifyCantiereMenu()">✏️ Modifica Cantiere</div>
-                        <div class="menu-item" data-onclick="showDeleteCantiereMenu()">🗑️ Elimina Cantiere</div>
+                        <div class="menu-item" onclick="showModifyCantiereMenu()">✏️ Modifica Cantiere</div>
+                        <div class="menu-item" onclick="showDeleteCantiereMenu()">🗑️ Elimina Cantiere</div>
                         <div class="menu-separator"></div>
-                        <div class="menu-item" data-onclick="openSettings()">📧 Impostazioni Email</div>
-                        <div class="menu-item" data-onclick="openGeneralSettings()">⚙️ Impostazioni Generali</div>
+                        <div class="menu-item" onclick="openSettings()">📧 Impostazioni Email</div>
+                        <div class="menu-item" onclick="openGeneralSettings()">⚙️ Impostazioni Generali</div>
                         <div class="menu-separator"></div>
-                        <div class="menu-item" data-onclick="logout()">🚪 Logout</div>
+                        <div class="menu-item" onclick="logout()">🚪 Logout</div>
                     </div>
                 </div>
             </div>
@@ -127,7 +126,7 @@
                 </div>
                 
                 <div class="modal-actions">
-                    <button type="button" data-data-onclick="closeModal()">❌ Annulla</button>
+                    <button type="button" onclick="closeModal()">❌ Annulla</button>
                     <button type="submit">💾 Salva</button>
                 </div>
             </form>
@@ -159,7 +158,7 @@
                 </div>
                 
                 <div class="modal-actions">
-                    <button type="button" data-data-onclick="closeModal()">❌ Annulla</button>
+                    <button type="button" onclick="closeModal()">❌ Annulla</button>
                     <button type="submit">💾 Salva</button>
                 </div>
             </form>
@@ -184,9 +183,9 @@
 
                 <div class="calendar-section">
                     <div class="calendar-header">
-                        <button class="calendar-nav" data-onclick="changeMonth(-1)">‹</button>
+                        <button class="calendar-nav" onclick="changeMonth(-1)">‹</button>
                         <h4 id="calendar-month-year"></h4>
-                        <button class="calendar-nav" data-onclick="changeMonth(1)">›</button>
+                        <button class="calendar-nav" onclick="changeMonth(1)">›</button>
                     </div>
                     <div class="calendar-grid" id="calendar-grid"></div>
                 </div>
@@ -205,14 +204,14 @@
 
                 <div class="email-section">
                     <h4>📧 Invio Email di Partecipazione</h4>
-                    <button id="btn-send-emails" class="btn-send-email" data-onclick="sendParticipationEmails()">
+                    <button id="btn-send-emails" class="btn-send-email" onclick="sendParticipationEmails()">
                         📤 Invia Email agli Operai
                     </button>
                 </div>
             </div>
 
             <div class="modal-actions">
-                <button data-onclick="closeCantiereModal()">✅ Chiudi</button>
+                <button onclick="closeCantiereModal()">✅ Chiudi</button>
             </div>
         </div>
     </div>
@@ -223,8 +222,8 @@
             <h3>⚙️ Impostazioni Sistema</h3>
             
             <div class="tabs-container">
-                <div class="tab active" data-onclick="showSettingsTab('email')">📧 Email</div>
-                <div class="tab" data-onclick="showSettingsTab('general')">🌐 Generali</div>
+                <div class="tab active" onclick="showSettingsTab('email')">📧 Email</div>
+                <div class="tab" onclick="showSettingsTab('general')">🌐 Generali</div>
             </div>
 
             <!-- TAB EMAIL -->
@@ -267,9 +266,9 @@
                 </div>
                 
                 <div class="email-actions">
-                    <button data-onclick="testEmailConnection()" class="btn btn-secondary">🔧 Test Connessione</button>
-                    <button data-onclick="resetEmailSettings()" class="btn btn-secondary">🔄 Reset</button>
-                    <button data-onclick="saveEmailSettings()" class="btn btn-primary">💾 Salva</button>
+                    <button onclick="testEmailConnection()" class="btn btn-secondary">🔧 Test Connessione</button>
+                    <button onclick="resetEmailSettings()" class="btn btn-secondary">🔄 Reset</button>
+                    <button onclick="saveEmailSettings()" class="btn btn-primary">💾 Salva</button>
                 </div>
             </div>
 
@@ -312,23 +311,17 @@
                 </div>
                 
                 <div class="general-actions">
-                    <button data-onclick="resetGeneralSettings()" class="btn btn-secondary">🔄 Reset</button>
-                    <button data-onclick="saveGeneralSettings()" class="btn btn-primary">💾 Salva</button>
+                    <button onclick="resetGeneralSettings()" class="btn btn-secondary">🔄 Reset</button>
+                    <button onclick="saveGeneralSettings()" class="btn btn-primary">💾 Salva</button>
                 </div>
             </div>
 
             <div class="modal-actions">
-                <button data-onclick="closeSettings()">✅ Chiudi</button>
+                <button onclick="closeSettings()">✅ Chiudi</button>
             </div>
         </div>
     </div>
 
-    <script>
-        // Controllo compatibilità browser
-        if (!window.JSON || !window.localStorage || !Array.prototype.indexOf) {
-            alert('Browser troppo vecchio. Aggiorna per utilizzare Sse Manager.');
-        }
-    </script>
     <script src="app.js"></script>
 </body>
 </html>
