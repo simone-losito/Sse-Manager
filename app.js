@@ -816,30 +816,33 @@ function assignOperaio(operaioId, cantiereId) {
     renderApp();
 }
 
-function unassignOperaio(operaioId, cantiereId) {
-    console.log('🔓 UNASSIGN OPERAIO:', operaioId, 'from', cantiereId);
-    
-    const operaio = operai.find(o => o.id === operaioId);
-    const cantiere = cantieri.find(c => c.id === cantiereId);
-    
-    if (!operaio || !cantiere) return;
-    
-    operaio.cantiere = null;
-    cantiere.operai = cantiere.operai.filter(id => id !== operaioId);
-    
-    renderApp();
-}
+function unassignOperaio(opId, cantiereId) {
+    console.log('🔄 Rimozione operaio', opId, 'dal cantiere', cantiereId);
 
-// ===== FUNZIONI DETTAGLI CANTIERE =====
-function showCantiereDetails(cantiereId) {
-    console.log('📋 SHOW CANTIERE DETAILS:', cantiereId);
-    
-    const cantiere = cantieri.find(c => c.id === cantiereId);
-    if (!cantiere) return;
-    
-    currentCantiereId = cantiereId;
-    
-    document.getElementById('cantiere-details-title').textContent = `Dettagli: ${cantiere.nome}`;
+    // Rimuove l'assegnazione del dipendente dal cantiere
+    operai = operai.map(op => {
+        if (op.id === opId) {
+            console.log('✅ Operaio rimosso:', op.nome);
+            op.cantiere = null;
+        }
+        return op;
+    });
+
+    // Aggiorna UI generale
+    renderOperai();
+    renderCantieri();
+
+    // Aggiorna il modal del cantiere se è aperto
+    const modalCantiere = document.getElementById('modal-cantiere-details');
+    if (modalCantiere && !modalCantiere.classList.contains('hidden')) {
+        // Il modal è aperto, aggiorna il contenuto
+        console.log('📋 Aggiornamento modal cantiere aperto');
+        showCantiereDetails(cantiereId);
+    }
+
+    // Salva i dati
+    saveToStorage();
+}`;
     
     const icons = {'Civile': '🏰', 'Industriale': '🏭', 'Residenziale': '🏢'};
     const icon = icons[cantiere.tipo] || '🏗️';
