@@ -1,4 +1,4 @@
-/* styles.css - Sse Manager Ver 1.6.1 - CORRETTO */
+/* styles.css - Sse Manager Ver 1.6.2 - COMPLETO */
 :root {
   /* Primitive Color Tokens */
   --color-white: rgba(255, 255, 255, 1);
@@ -1746,111 +1746,147 @@ select.form-control {
     box-shadow: var(--shadow-md);
 }
 
-/* ===== CORREZIONI BUG VER 1.6.1 ===== */
+/* ===== CORREZIONI CRITICHE VER 1.6.2 ===== */
 
-/* Migliora visibilità operai assegnati */
-.operaio-card.assigned {
-    border-left: 4px solid #48bb78;
-    background: rgba(72, 187, 120, 0.05);
-}
-
-/* Migliora drag & drop cantieri */
+/* Fix Drag & Drop */
 .cantiere.dragging {
     opacity: 0.7;
-    cursor: grabbing;
-    transform: rotate(5deg);
+    cursor: grabbing !important;
+    transform: rotate(5deg) scale(1.05);
     z-index: 1000;
 }
 
-.cantiere.drag-over {
-    border-color: #48bb78;
-    background: rgba(72, 187, 120, 0.1);
+.operaio-card.dragging {
+    opacity: 0.5;
+    cursor: grabbing !important;
+    transform: rotate(5deg) scale(0.95);
 }
 
-/* Migliora visualizzazione filtri */
+.cantiere.drag-over {
+    border-color: var(--color-success) !important;
+    background: rgba(var(--color-success-rgb), 0.1) !important;
+    transform: scale(1.02);
+}
+
+/* Fix Layout e Visualizzazione */
+.main-content {
+    display: flex !important;
+    flex: 1 !important;
+    height: calc(100vh - 80px) !important;
+    overflow: hidden !important;
+}
+
+.sidebar {
+    width: 320px !important;
+    min-width: 320px !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+.map-area {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    min-width: 0 !important;
+}
+
+.map-container {
+    flex: 1 !important;
+    position: relative !important;
+    min-height: 400px !important;
+}
+
+/* Fix Filtri */
 .filter-controls {
-    display: flex;
-    gap: 8px;
-    margin-top: 10px;
-    flex-wrap: wrap;
+    display: flex !important;
+    gap: 8px !important;
+    margin-top: 10px !important;
+    flex-wrap: wrap !important;
 }
 
 .filter-select {
-    flex: 1;
-    min-width: 120px;
-    padding: 6px 8px;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-sm);
-    background: var(--color-surface);
-    color: var(--color-text);
-    font-size: var(--font-size-xs);
+    flex: 1 !important;
+    min-width: 120px !important;
+    padding: 6px 8px !important;
 }
 
-/* Time slot improvements */
+/* Fix Responsive */
+@media (max-width: 768px) {
+    .main-content {
+        flex-direction: column !important;
+    }
+    
+    .sidebar {
+        width: 100% !important;
+        max-height: 300px !important;
+    }
+    
+    .map-container {
+        height: 400px !important;
+    }
+}
+
+/* Fix Bottoni e Interazioni */
+.btn:hover {
+    transform: translateY(-1px) !important;
+}
+
+.menu-item:hover {
+    background: var(--color-secondary) !important;
+    color: var(--color-primary) !important;
+}
+
+/* Fix Visualizzazione Operai */
+.operaio-card.assigned {
+    border-left: 4px solid var(--color-warning) !important;
+    background: rgba(var(--color-warning-rgb), 0.05) !important;
+}
+
+/* Fix Time Inputs */
 .time-inputs {
-    display: flex;
-    gap: 15px;
-    align-items: center;
-    flex-wrap: wrap;
+    display: flex !important;
+    gap: 15px !important;
+    align-items: center !important;
+    flex-wrap: wrap !important;
 }
 
 .time-inputs input[type="time"] {
-    padding: 8px 12px;
-    border: 2px solid var(--color-border);
-    border-radius: var(--radius-base);
-    background: var(--color-surface);
-    color: var(--color-text);
-    font-family: var(--font-family-base);
+    padding: 8px 12px !important;
+    border: 2px solid var(--color-border) !important;
+    border-radius: var(--radius-base) !important;
 }
 
-/* Migliora responsive design */
-@media (max-width: 768px) {
-    .filter-controls {
-        flex-direction: column;
-    }
-    
-    .filter-select {
-        min-width: auto;
-    }
-    
-    .time-inputs {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 8px;
-    }
+/* Ensure elements are visible */
+.operai-container, .map-container, .sidebar, .map-area {
+    visibility: visible !important;
+    opacity: 1 !important;
 }
 
-/* Migliora visualizzazione operai nei dettagli cantiere */
-.operaio-detail {
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-sm);
-    padding: var(--space-12);
-    margin-bottom: var(--space-8);
-    transition: all var(--duration-fast) var(--ease-standard);
-}
-
-.operaio-detail:hover {
-    border-color: var(--color-primary);
-    transform: translateX(4px);
-}
-
-/* Stili aggiuntivi per drag & drop migliorato */
-.operaio-card.draggable {
+/* Miglioramenti Drag & Drop */
+.operaio-card[draggable="true"] {
     cursor: grab;
 }
 
-.cantiere.drop-target {
-    border: 2px dashed var(--color-primary);
+.operaio-card[draggable="true"]:hover {
+    cursor: grab;
 }
 
-/* Migliora visualizzazione livello operai */
+.cantiere[draggable="true"] {
+    cursor: move;
+}
+
+.cantiere[draggable="true"]:hover {
+    cursor: move;
+}
+
+/* Miglioramenti Visualizzazione */
 .level-badge {
     padding: 2px 8px;
     border-radius: 12px;
     font-size: 0.7em;
     font-weight: 600;
     color: white;
+    display: inline-block;
 }
 
 .level-1 { background: #e53e3e; }
@@ -1859,17 +1895,7 @@ select.form-control {
 .level-4 { background: #48bb78; }
 .level-5 { background: #4299e1; }
 
-/* Migliora UX per elementi interattivi */
-.btn:hover {
-    transform: translateY(-1px);
-}
-
-.menu-item:hover {
-    background: var(--color-secondary);
-    color: var(--color-primary);
-}
-
-/* Scrollbar personalizzata per tutti i container */
+/* Scrollbar migliorata */
 ::-webkit-scrollbar {
     width: 8px;
 }
@@ -1886,4 +1912,86 @@ select.form-control {
 
 ::-webkit-scrollbar-thumb:hover {
     background: var(--color-primary);
+}
+
+/* Focus states migliorati */
+.btn:focus-visible,
+.form-control:focus-visible,
+.filter-select:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+/* Transizioni smooth */
+.operaio-card,
+.cantiere,
+.btn,
+.menu-item {
+    transition: all 0.2s ease-in-out;
+}
+
+/* Z-index sistemato */
+.modal {
+    z-index: 2000;
+}
+
+.menu-dropdown {
+    z-index: 1001;
+}
+
+.cantiere {
+    z-index: 10;
+}
+
+.cantiere:hover {
+    z-index: 20;
+}
+
+.cantiere.dragging {
+    z-index: 30;
+}
+
+/* Loading states */
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+/* Error states */
+.form-control.error {
+    border-color: var(--color-error);
+}
+
+.error-message {
+    color: var(--color-error);
+    font-size: var(--font-size-xs);
+    margin-top: var(--space-4);
+}
+
+/* Success states */
+.success-message {
+    color: var(--color-success);
+    font-size: var(--font-size-xs);
+    margin-top: var(--space-4);
+}
+
+/* Tooltip styles */
+.tooltip {
+    position: relative;
+}
+
+.tooltip:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--color-text);
+    color: var(--color-background);
+    padding: var(--space-4) var(--space-8);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-xs);
+    white-space: nowrap;
+    z-index: 1000;
 }
