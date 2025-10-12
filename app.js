@@ -1,5 +1,5 @@
-// app.js - Sse Manager Ver 1.5 - COMPLETAMENTE FUNZIONANTE
-console.log('🏗️ Sse Manager - Caricamento Ver 1.5...');
+// app.js - Sse Manager Ver 1.6 - COMPLETAMENTE FUNZIONANTE
+console.log('🏗️ Sse Manager - Caricamento Ver 1.6...');
 
 class SseManager {
     constructor() {
@@ -38,7 +38,7 @@ class SseManager {
     }
 
     init() {
-        console.log('🚀 Inizializzazione Sse Manager Ver 1.5');
+        console.log('🚀 Inizializzazione Sse Manager Ver 1.6');
         this.setupEventListeners();
         this.updateStats();
         this.setupAutoSave();
@@ -288,19 +288,16 @@ class SseManager {
         document.getElementById('modal-user-title').textContent = 'Aggiungi Utente';
         document.getElementById('form-user').reset();
         document.getElementById('user-id').value = '';
-        document.getElementById('user-password').value = ''; // Campo password vuoto
         
         // Popola dropdown operai
         const operaioSelect = document.getElementById('user-operaio');
-        if (operaioSelect) {
-            operaioSelect.innerHTML = '<option value="">Nessuna associazione</option>';
-            this.operai.forEach(operaio => {
-                const option = document.createElement('option');
-                option.value = operaio.id;
-                option.textContent = operaio.nome;
-                operaioSelect.appendChild(option);
-            });
-        }
+        operaioSelect.innerHTML = '<option value="">Nessuna associazione</option>';
+        this.operai.forEach(operaio => {
+            const option = document.createElement('option');
+            option.value = operaio.id;
+            option.textContent = operaio.nome;
+            operaioSelect.appendChild(option);
+        });
         
         this.showModal('modal-user-form');
     }
@@ -312,21 +309,19 @@ class SseManager {
         document.getElementById('modal-user-title').textContent = 'Modifica Utente';
         document.getElementById('user-id').value = user.id;
         document.getElementById('user-username').value = user.username;
-        document.getElementById('user-password').value = user.password; // Mostra password corrente
+        document.getElementById('user-password').value = user.password;
         document.getElementById('user-type').value = user.type;
         
         // Popola dropdown operai
         const operaioSelect = document.getElementById('user-operaio');
-        if (operaioSelect) {
-            operaioSelect.innerHTML = '<option value="">Nessuna associazione</option>';
-            this.operai.forEach(operaio => {
-                const option = document.createElement('option');
-                option.value = operaio.id;
-                option.textContent = operaio.nome;
-                option.selected = operaio.id === user.operaioId;
-                operaioSelect.appendChild(option);
-            });
-        }
+        operaioSelect.innerHTML = '<option value="">Nessuna associazione</option>';
+        this.operai.forEach(operaio => {
+            const option = document.createElement('option');
+            option.value = operaio.id;
+            option.textContent = operaio.nome;
+            option.selected = user.operaioId === operaio.id;
+            operaioSelect.appendChild(option);
+        });
         
         this.showModal('modal-user-form');
     }
@@ -339,7 +334,7 @@ class SseManager {
         const operaioId = document.getElementById('user-operaio').value || null;
 
         if (!username || !password) {
-            alert('Inserisci username e password');
+            alert('Compila tutti i campi obbligatori');
             return;
         }
 
@@ -353,24 +348,26 @@ class SseManager {
         if (userId) {
             // Modifica utente esistente
             const userIndex = this.users.findIndex(u => u.id === parseInt(userId));
-            this.users[userIndex] = {
-                ...this.users[userIndex],
-                username,
-                password,
-                type,
-                operaioId: operaioId ? parseInt(operaioId) : null
-            };
+            if (userIndex !== -1) {
+                this.users[userIndex] = {
+                    ...this.users[userIndex],
+                    username,
+                    password,
+                    type,
+                    operaioId: operaioId ? parseInt(operaioId) : null
+                };
+            }
         } else {
             // Nuovo utente
-            const newId = Math.max(...this.users.map(u => u.id), 0) + 1;
-            this.users.push({
-                id: newId,
+            const newUser = {
+                id: Math.max(...this.users.map(u => u.id), 0) + 1,
                 username,
                 password,
                 type,
                 operaioId: operaioId ? parseInt(operaioId) : null,
                 lastLogin: null
-            });
+            };
+            this.users.push(newUser);
         }
 
         this.saveAllData();
@@ -401,267 +398,102 @@ class SseManager {
         this.closeModal('modal-users');
     }
 
-    // ===== IMPORT/EXPORT DIPENDENTI =====
-    exportOperai() {
-        if (this.currentUser.type === 'operaio') {
-            alert('❌ Non hai i permessi per esportare i dipendenti');
-            return;
-        }
-
-        // Crea CSV con campi separati
-        const headers = ['Nome Completo', 'Email', 'Telefono', 'Specializzazione', 'Livello', 'Preposto', 'Cantiere Assegnato'];
-        const data = this.operai.map(operaio => [
-            operaio.nome,
-            operaio.email,
-            operaio.telefono,
-            operaio.specializzazione,
-            operaio.livello.toString(),
-            operaio.preposto ? 'Sì' : 'No',
-            operaio.cantiere ? this.cantieri.find(c => c.id === operaio.cantiere)?.nome : 'Nessuno'
-        ]);
-
-        const csvContent = [headers, ...data]
-            .map(row => row.map(field => `"${field}"`).join(','))
-            .join('\n');
-
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        const url = URL.createObjectURL(blob);
-        
-        link.setAttribute('href', url);
-        link.setAttribute('download', `dipendenti_standardse_${new Date().toISOString().split('T')[0]}.csv`);
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-        
-        alert('✅ Dipendenti esportati con successo in formato CSV!');
-    }
-
-    importOperai() {
-        if (this.currentUser.type === 'operaio') {
-            alert('❌ Non hai i permessi per importare i dipendenti');
-            return;
-        }
-
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = '.csv';
-        
-        input.onchange = (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                try {
-                    const csvData = event.target.result;
-                    const data = this.parseCSVData(csvData);
-                    this.processImportedOperai(data);
-                } catch (error) {
-                    alert('❌ Errore durante l\'importazione: ' + error.message);
-                }
-            };
-            reader.readAsText(file);
-        };
-        
-        input.click();
-    }
-
-    parseCSVData(csvText) {
-        const lines = csvText.split('\n').filter(line => line.trim());
-        const headers = lines[0].split(',').map(header => header.replace(/"/g, '').trim());
-        
-        const data = [];
-        for (let i = 1; i < lines.length; i++) {
-            const values = lines[i].split(',').map(value => value.replace(/"/g, '').trim());
-            const row = {};
-            headers.forEach((header, index) => {
-                row[header] = values[index] || '';
-            });
-            data.push(row);
-        }
-        
-        return data;
-    }
-
-    processImportedOperai(data) {
-        let importedCount = 0;
-        let updatedCount = 0;
-
-        data.forEach(row => {
-            const nome = row['Nome Completo'];
-            const email = row['Email'];
-            
-            if (!nome || !email) return;
-
-            const existingIndex = this.operai.findIndex(o => o.email === email);
-            
-            if (existingIndex >= 0) {
-                // Aggiorna operaio esistente
-                this.operai[existingIndex] = {
-                    ...this.operai[existingIndex],
-                    nome,
-                    telefono: row['Telefono'] || this.operai[existingIndex].telefono,
-                    specializzazione: row['Specializzazione'] || this.operai[existingIndex].specializzazione,
-                    livello: parseInt(row['Livello']) || this.operai[existingIndex].livello,
-                    preposto: row['Preposto'] === 'Sì'
-                };
-                updatedCount++;
-            } else {
-                // Nuovo operaio
-                const newId = Math.max(...this.operai.map(o => o.id), 0) + 1;
-                const avatarMap = {
-                    'Elettricista': '⚡', 'Meccanico': '🔧', 'Muratore': '🧱', 
-                    'Carpentiere': '🪵', 'Idraulico': '🚰', 'Saldatore': '🔥', 
-                    'Operatore Macchine': '🚜'
-                };
-                
-                this.operai.push({
-                    id: newId,
-                    nome,
-                    email,
-                    telefono: row['Telefono'] || '',
-                    specializzazione: row['Specializzazione'] || 'Operaio',
-                    livello: parseInt(row['Livello']) || 3,
-                    cantiere: null,
-                    avatar: avatarMap[row['Specializzazione']] || '👷',
-                    preposto: row['Preposto'] === 'Sì'
-                });
-                importedCount++;
-            }
-        });
-
-        this.saveAllData();
-        this.renderApp();
-        
-        alert(`✅ Import completato!\nNuovi operai: ${importedCount}\nOperai aggiornati: ${updatedCount}`);
-    }
-
-    // ===== FUNZIONI OPERAI E CANTIERI =====
-    renderApp() {
-        this.renderOperai();
-        this.renderCantieri();
-        this.updateStats();
-    }
-
+    // ===== GESTIONE OPERAI =====
     renderOperai() {
         const container = document.getElementById('operai-container');
         const controls = document.getElementById('controls-operai');
         
-        if (!container) return;
-        
+        if (!container || !controls) return;
+
+        // Controlli solo per manager e master
+        if (this.currentUser.type === 'manager' || this.currentUser.type === 'master') {
+            controls.innerHTML = `
+                <button class="btn btn-primary" onclick="app.addOperaio()">
+                    ➕ Aggiungi Operaio
+                </button>
+            `;
+        } else {
+            controls.innerHTML = '';
+        }
+
         container.innerHTML = '';
         
-        // Solo master e manager possono aggiungere operai
-        if (this.currentUser.type !== 'operaio') {
-            if (controls) {
-                controls.innerHTML = '<button class="btn btn-primary" id="add-operaio-btn">+ Aggiungi Operaio</button>';
-                document.getElementById('add-operaio-btn').addEventListener('click', () => this.addOperaio());
-            }
-        } else {
-            if (controls) controls.innerHTML = '';
-        }
+        const filteredOperai = this.getFilteredOperai();
         
-        // Mostra TUTTI gli operai (disponibili e assegnati)
-        this.operai.forEach(operaio => {
-            if (this.isOperaioVisible(operaio)) {
-                const card = document.createElement('div');
-                card.className = 'operaio-card';
-                if (operaio.cantiere !== null) {
-                    card.classList.add('assigned');
-                }
-                card.draggable = this.currentUser.type !== 'operaio';
-                card.dataset.operaioId = operaio.id;
-                card.innerHTML = this.getOperaioCardHTML(operaio);
+        filteredOperai.forEach(operaio => {
+            const operaioEl = document.createElement('div');
+            operaioEl.className = `operaio-card ${operaio.cantiere ? 'assigned' : ''} ${this.isDragDropActive ? 'draggable' : ''}`;
+            operaioEl.setAttribute('data-operaio-id', operaio.id);
+            operaioEl.draggable = this.isDragDropActive;
+            
+            // Drag events solo per manager e master
+            if (this.currentUser.type === 'manager' || this.currentUser.type === 'master') {
+                operaioEl.addEventListener('dragstart', (e) => {
+                    this.dragStartOperaio(e, operaio.id);
+                });
                 
-                this.setupOperaioDrag(card, operaio);
-                container.appendChild(card);
+                operaioEl.addEventListener('dragend', (e) => {
+                    this.dragEndOperaio(e);
+                });
             }
-        });
-        
-        this.updateStats();
-    }
 
-    getOperaioCardHTML(operaio) {
-        const prepostoBadge = operaio.preposto ? '<div class="operaio-preposto">⭐ Preposto ⭐</div>' : '';
-        
-        // Informazioni di assegnazione
-        let assignmentInfo = '';
-        if (operaio.cantiere !== null) {
-            const cantiere = this.cantieri.find(c => c.id === operaio.cantiere);
-            if (cantiere) {
-                assignmentInfo = `<div class="assignment-info">📍 Assegnato a: ${cantiere.nome}</div>`;
-            }
-        }
-        
-        let actionsHTML = '';
-        if (this.currentUser.type !== 'operaio') {
-            actionsHTML = `
+            const cantiere = operaio.cantiere ? this.cantieri.find(c => c.id === operaio.cantiere) : null;
+            
+            operaioEl.innerHTML = `
+                <div class="operaio-header">
+                    <span class="operaio-avatar">${operaio.avatar}</span>
+                    <div class="operaio-info">
+                        <div class="operaio-nome">${operaio.nome}</div>
+                        <div class="operaio-specializzazione">${operaio.specializzazione}</div>
+                    </div>
+                    ${operaio.preposto ? '<span class="preposto-badge">⭐</span>' : ''}
+                </div>
+                <div class="operaio-details">
+                    <div class="operaio-contact">
+                        <span class="contact-item">📧 ${operaio.email}</span>
+                        <span class="contact-item">📞 ${operaio.telefono}</span>
+                    </div>
+                    <div class="operaio-stats">
+                        <span class="level-badge level-${operaio.livello}">Liv. ${operaio.livello}</span>
+                        ${cantiere ? `<span class="cantiere-assigned">📍 ${cantiere.nome}</span>` : '<span class="cantiere-free">🆓 Disponibile</span>'}
+                    </div>
+                </div>
+                ${(this.currentUser.type === 'manager' || this.currentUser.type === 'master') ? `
                 <div class="operaio-actions">
-                    <button class="btn btn-edit" data-operaio-id="${operaio.id}">✏️</button>
-                    <button class="btn btn-delete" data-operaio-id="${operaio.id}">🗑️</button>
+                    <button class="btn-edit" onclick="app.editOperaio(${operaio.id})">✏️</button>
+                    <button class="btn-delete" onclick="app.deleteOperaio(${operaio.id})">🗑️</button>
                 </div>
+                ` : ''}
             `;
-        }
-        
-        return `
-            <div class="operaio-header">
-                <span class="operaio-avatar">${operaio.avatar}</span>
-                <div class="operaio-info">
-                    <div class="operaio-nome">${operaio.nome}</div>
-                    <div class="operaio-spec">${operaio.specializzazione}</div>
-                    <div class="operaio-level">Livello ${operaio.livello}</div>
-                </div>
-            </div>
-            <div class="operaio-status">${operaio.cantiere === null ? 'Disponibile' : 'Assegnato'}</div>
-            <div class="operaio-contact">
-                📧 ${operaio.email}<br>
-                📞 ${operaio.telefono}
-            </div>
-            ${prepostoBadge}
-            ${assignmentInfo}
-            ${actionsHTML}
-        `;
+            
+            container.appendChild(operaioEl);
+        });
     }
 
-    setupOperaioDrag(card, operaio) {
-        if (this.currentUser.type === 'operaio') return;
+    getFilteredOperai() {
+        const searchTerm = document.getElementById('search-operai').value.toLowerCase();
+        const specializzazione = document.getElementById('filter-specializzazione').value;
+        const livello = document.getElementById('filter-livello').value;
+        const preposto = document.getElementById('filter-preposto').value;
 
-        card.addEventListener('dragstart', (e) => {
-            this.draggedOperaio = operaio;
-            this.isDragDropActive = true;
-            e.dataTransfer.effectAllowed = 'move';
-            e.dataTransfer.setData('text/plain', operaio.id.toString());
-            card.classList.add('dragging');
-        });
-        
-        card.addEventListener('dragend', (e) => {
-            card.classList.remove('dragging');
-            setTimeout(() => {
-                this.isDragDropActive = false;
-                this.draggedOperaio = null;
-            }, 100);
-        });
+        return this.operai.filter(operaio => {
+            const matchesSearch = !searchTerm || 
+                operaio.nome.toLowerCase().includes(searchTerm) ||
+                operaio.specializzazione.toLowerCase().includes(searchTerm) ||
+                operaio.email.toLowerCase().includes(searchTerm);
+            
+            const matchesSpecializzazione = !specializzazione || operaio.specializzazione === specializzazione;
+            const matchesLivello = !livello || operaio.livello.toString() === livello;
+            const matchesPreposto = !preposto || 
+                (preposto === 'si' && operaio.preposto) || 
+                (preposto === 'no' && !operaio.preposto);
 
-        // Bottoni azioni
-        const editBtn = card.querySelector('.btn-edit');
-        const deleteBtn = card.querySelector('.btn-delete');
-        
-        if (editBtn) {
-            editBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                this.editOperaio(parseInt(e.target.dataset.operaioId));
-            });
-        }
-        
-        if (deleteBtn) {
-            deleteBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                this.removeOperaio(parseInt(e.target.dataset.operaioId));
-            });
-        }
+            return matchesSearch && matchesSpecializzazione && matchesLivello && matchesPreposto;
+        });
+    }
+
+    filterOperai() {
+        this.renderOperai();
     }
 
     addOperaio() {
@@ -671,10 +503,10 @@ class SseManager {
         this.showModal('modal-operaio');
     }
 
-    editOperaio(operaioId) {
-        const operaio = this.operai.find(o => o.id === operaioId);
+    editOperaio(id) {
+        const operaio = this.operai.find(o => o.id === id);
         if (!operaio) return;
-        
+
         document.getElementById('modal-operaio-title').textContent = 'Modifica Operaio';
         document.getElementById('operaio-id').value = operaio.id;
         document.getElementById('operaio-nome').value = operaio.nome;
@@ -690,271 +522,189 @@ class SseManager {
     saveOperaio() {
         const id = document.getElementById('operaio-id').value;
         const nome = document.getElementById('operaio-nome').value.trim();
-        const emailInput = document.getElementById('operaio-email').value.trim();
+        const email = document.getElementById('operaio-email').value.trim();
         const telefono = document.getElementById('operaio-telefono').value.trim();
         const specializzazione = document.getElementById('operaio-specializzazione').value;
-        const livello = parseInt(document.getElementById('operaio-livello').value);
+        const livello = document.getElementById('operaio-livello').value;
         const preposto = document.getElementById('operaio-preposto').checked;
-        
-        // Aggiungi automaticamente @standardse.it se non presente
-        let email = emailInput;
-        if (email && !email.includes('@')) {
-            email = email + '@standardse.it';
-        } else if (!email) {
-            // Genera email automatica dal nome
-            const nomeEmail = nome.toLowerCase().replace(/\s+/g, '.');
-            email = nomeEmail + '@standardse.it';
-        }
-        
+
         if (!nome || !email || !telefono || !specializzazione || !livello) {
-            alert('Tutti i campi sono obbligatori');
+            alert('Compila tutti i campi obbligatori');
             return;
         }
-        
-        const avatarMap = {
-            'Elettricista': '⚡', 'Meccanico': '🔧', 'Muratore': '🧱', 
-            'Carpentiere': '🪵', 'Idraulico': '🚰', 'Saldatore': '🔥', 
-            'Operatore Macchine': '🚜'
+
+        const operaioData = {
+            nome,
+            email,
+            telefono,
+            specializzazione,
+            livello: parseInt(livello),
+            preposto,
+            avatar: this.getAvatarForSpecialization(specializzazione)
         };
-        
+
         if (id) {
-            const operaio = this.operai.find(o => o.id == id);
-            if (operaio) {
-                Object.assign(operaio, {
-                    nome, email, telefono, specializzazione, livello, preposto,
-                    avatar: avatarMap[specializzazione] || '👷'
-                });
+            // Modifica operaio esistente
+            const operaioIndex = this.operai.findIndex(o => o.id === parseInt(id));
+            if (operaioIndex !== -1) {
+                // Mantieni il cantiere esistente
+                operaioData.cantiere = this.operai[operaioIndex].cantiere;
+                operaioData.id = parseInt(id);
+                this.operai[operaioIndex] = operaioData;
             }
         } else {
-            const newId = Math.max(0, ...this.operai.map(o => o.id)) + 1;
-            this.operai.push({
-                id: newId, nome, email, telefono, specializzazione, livello, 
-                cantiere: null, avatar: avatarMap[specializzazione] || '👷', preposto
-            });
+            // Nuovo operaio
+            const newOperaio = {
+                id: Math.max(...this.operai.map(o => o.id), 0) + 1,
+                cantiere: null,
+                ...operaioData
+            };
+            this.operai.push(newOperaio);
         }
-        
-        this.closeModal('modal-operaio');
-        this.renderApp();
+
         this.saveAllData();
+        this.renderOperai();
+        this.updateStats();
+        this.closeModal('modal-operaio');
+        alert('✅ Operaio salvato con successo');
     }
 
-    removeOperaio(operaioId) {
-        const operaio = this.operai.find(o => o.id === operaioId);
-        if (!operaio) return;
-        
-        if (confirm(`Sei sicuro di voler eliminare ${operaio.nome}?`)) {
-            // Rimuovi da tutti i cantieri
+    deleteOperaio(id) {
+        if (confirm('Sei sicuro di voler eliminare questo operaio?')) {
+            // Rimuovi operaio dai cantieri
             this.cantieri.forEach(cantiere => {
-                const index = cantiere.operai.indexOf(operaioId);
-                if (index !== -1) {
-                    cantiere.operai.splice(index, 1);
-                }
+                cantiere.operai = cantiere.operai.filter(operaioId => operaioId !== id);
             });
             
-            // Rimuovi dall'array operai
-            const index = this.operai.findIndex(o => o.id === operaioId);
-            if (index !== -1) {
-                this.operai.splice(index, 1);
-            }
+            // Rimuovi operaio
+            this.operai = this.operai.filter(o => o.id !== id);
             
-            this.renderApp();
             this.saveAllData();
-            
-            // Se il modal dettagli cantiere è aperto, aggiorna anche quello
-            if (this.currentCantiereId) {
-                this.showCantiereDetails(this.currentCantiereId);
-            }
+            this.renderOperai();
+            this.renderCantieri();
+            this.updateStats();
+            alert('✅ Operaio eliminato');
         }
     }
 
-    // ===== FUNZIONI CANTIERI =====
+    getAvatarForSpecialization(specializzazione) {
+        const avatars = {
+            'Elettricista': '⚡',
+            'Meccanico': '🔧',
+            'Muratore': '🧱',
+            'Carpentiere': '🪵',
+            'Idraulico': '🚰',
+            'Saldatore': '🔥',
+            'Operatore Macchine': '🚜'
+        };
+        return avatars[specializzazione] || '👷';
+    }
+
+    // ===== GESTIONE CANTIERI =====
     renderCantieri() {
         const container = document.getElementById('map-container');
         const controls = document.getElementById('controls-cantieri');
         
-        if (!container) return;
-        
+        if (!container || !controls) return;
+
+        // Controlli solo per manager e master
+        if (this.currentUser.type === 'manager' || this.currentUser.type === 'master') {
+            controls.innerHTML = `
+                <button class="btn btn-primary" onclick="app.addCantiere()">
+                    ➕ Aggiungi Cantiere
+                </button>
+                <button class="btn btn-secondary" onclick="app.toggleDragDrop()">
+                    ${this.isDragDropActive ? '🔒 Blocca' : '🔓 Sblocca'} Drag & Drop
+                </button>
+            `;
+        } else {
+            controls.innerHTML = '';
+        }
+
         container.innerHTML = '';
         
-        // Solo master e manager possono aggiungere cantieri
-        if (this.currentUser.type !== 'operaio') {
-            if (controls) {
-                controls.innerHTML = '<button class="btn btn-add" id="add-cantiere-btn">➕ Aggiungi Cantiere</button>';
-                document.getElementById('add-cantiere-btn').addEventListener('click', () => this.addCantiere());
-            }
-        } else {
-            if (controls) controls.innerHTML = '';
-        }
-        
-        this.cantieri.forEach(cantiere => {
-            const element = document.createElement('div');
-            element.className = 'cantiere';
-            element.dataset.cantiereId = cantiere.id;
-            element.style.left = cantiere.x + 'px';
-            element.style.top = cantiere.y + 'px';
-            element.innerHTML = this.getCantiereHTML(cantiere);
-            
-            this.setupCantiereDrag(element, cantiere);
-            this.setupCantiereDrop(element, cantiere);
-            this.setupCantiereClick(element, cantiere);
-            
-            container.appendChild(element);
-        });
-        
-        this.updateStats();
-    }
+        const searchTerm = document.getElementById('search-cantieri')?.value.toLowerCase() || '';
+        const filteredCantieri = this.cantieri.filter(cantiere => 
+            !searchTerm || cantiere.nome.toLowerCase().includes(searchTerm)
+        );
 
-    getCantiereHTML(cantiere) {
-        const icons = {'Civile': '🏰', 'Industriale': '🏭', 'Residenziale': '🏢', 'Stradale': '🛣️', 'Ferroviario': '🚂'};
-        const icon = icons[cantiere.tipo] || '🏗️';
-        const countBadge = cantiere.operai.length > 0 ? 
-            `<div class="cantiere-count">${cantiere.operai.length}</div>` : '';
-        
-        let controlsHTML = '';
-        if (this.currentUser.type !== 'operaio') {
-            controlsHTML = `
-                <div class="cantiere-controls">
-                    <button class="btn-small btn-edit" data-cantiere-id="${cantiere.id}">✏️</button>
-                    <button class="btn-small btn-delete" data-cantiere-id="${cantiere.id}">🗑️</button>
+        filteredCantieri.forEach(cantiere => {
+            const cantiereEl = document.createElement('div');
+            cantiereEl.className = `cantiere-card ${cantiere.tipo.toLowerCase()} ${this.isDragDropActive ? 'drop-target' : ''}`;
+            cantiereEl.style.left = `${cantiere.x}px`;
+            cantiereEl.style.top = `${cantiere.y}px`;
+            cantiereEl.setAttribute('data-cantiere-id', cantiere.id);
+
+            // Drag events per spostamento cantieri (solo manager/master)
+            if (this.currentUser.type === 'manager' || this.currentUser.type === 'master') {
+                cantiereEl.draggable = true;
+                
+                cantiereEl.addEventListener('dragstart', (e) => {
+                    this.dragStartCantiere(e, cantiere.id);
+                });
+                
+                cantiereEl.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    if (this.draggedOperaio) {
+                        cantiereEl.classList.add('drag-over');
+                    }
+                });
+                
+                cantiereEl.addEventListener('dragleave', (e) => {
+                    cantiereEl.classList.remove('drag-over');
+                });
+                
+                cantiereEl.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    cantiereEl.classList.remove('drag-over');
+                    
+                    if (this.draggedOperaio) {
+                        this.assignOperaioToCantiere(this.draggedOperaio, cantiere.id);
+                    }
+                });
+                
+                cantiereEl.addEventListener('dragend', (e) => {
+                    this.dragEndCantiere(e);
+                });
+            }
+
+            const assignedOperai = this.operai.filter(o => o.cantiere === cantiere.id);
+            
+            cantiereEl.innerHTML = `
+                <div class="cantiere-header">
+                    <div class="cantiere-icon">${this.getCantiereIcon(cantiere.tipo)}</div>
+                    <div class="cantiere-info">
+                        <div class="cantiere-nome">${cantiere.nome}</div>
+                        <div class="cantiere-indirizzo">${cantiere.indirizzo}</div>
+                    </div>
+                </div>
+                <div class="cantiere-stats">
+                    <div class="operai-count">👷 ${assignedOperai.length} operai</div>
+                    <div class="cantiere-tipo">${cantiere.tipo}</div>
+                </div>
+                <div class="cantiere-operai">
+                    ${assignedOperai.slice(0, 3).map(operaio => `
+                        <div class="mini-operaio" title="${operaio.nome}">
+                            ${operaio.avatar}
+                        </div>
+                    `).join('')}
+                    ${assignedOperai.length > 3 ? `<div class="more-operai">+${assignedOperai.length - 3}</div>` : ''}
+                </div>
+                <div class="cantiere-actions">
+                    <button class="btn-details" onclick="app.showCantiereDetails(${cantiere.id})">👁️ Dettagli</button>
+                    ${(this.currentUser.type === 'manager' || this.currentUser.type === 'master') ? `
+                    <button class="btn-edit" onclick="app.editCantiere(${cantiere.id})">✏️</button>
+                    <button class="btn-delete" onclick="app.deleteCantiere(${cantiere.id})">🗑️</button>
+                    ` : ''}
                 </div>
             `;
-        }
-        
-        return `
-            <div class="cantiere-icon">${icon}</div>
-            <div class="cantiere-nome">${cantiere.nome}</div>
-            <div class="cantiere-indirizzo">${cantiere.indirizzo}</div>
-            ${countBadge}
-            ${controlsHTML}
-        `;
-    }
-
-    setupCantiereDrag(element, cantiere) {
-        if (this.currentUser.type === 'operaio') return;
-
-        element.draggable = true;
-        
-        let dragOffsetX = 0;
-        let dragOffsetY = 0;
-        
-        element.addEventListener('dragstart', (e) => {
-            this.draggedCantiere = cantiere;
-            this.isDragDropActive = true;
-            e.dataTransfer.effectAllowed = 'move';
-            e.dataTransfer.setData('text/plain', 'cantiere-' + cantiere.id);
-            element.classList.add('dragging');
             
-            // Calcola l'offset del mouse rispetto all'elemento
-            const rect = element.getBoundingClientRect();
-            dragOffsetX = e.clientX - rect.left;
-            dragOffsetY = e.clientY - rect.top;
-        });
-        
-        element.addEventListener('dragend', (e) => {
-            element.classList.remove('dragging');
-            
-            if (this.draggedCantiere) {
-                const container = document.getElementById('map-container');
-                const containerRect = container.getBoundingClientRect();
-                
-                // Calcola la nuova posizione considerando l'offset
-                const x = e.clientX - containerRect.left - dragOffsetX;
-                const y = e.clientY - containerRect.top - dragOffsetY;
-                
-                // Limita la posizione ai confini del container
-                const maxX = containerRect.width - element.offsetWidth;
-                const maxY = containerRect.height - element.offsetHeight;
-                
-                this.draggedCantiere.x = Math.max(0, Math.min(x, maxX));
-                this.draggedCantiere.y = Math.max(0, Math.min(y, maxY));
-                
-                // Aggiorna la posizione CSS
-                element.style.left = this.draggedCantiere.x + 'px';
-                element.style.top = this.draggedCantiere.y + 'px';
-                
-                // Salva la nuova posizione
-                this.saveAllData();
-            }
-            
-            setTimeout(() => {
-                this.isDragDropActive = false;
-                this.draggedCantiere = null;
-            }, 100);
-        });
-
-        // Bottoni azioni
-        const editBtn = element.querySelector('.btn-edit');
-        const deleteBtn = element.querySelector('.btn-delete');
-        
-        if (editBtn) {
-            editBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                this.editCantiere(parseInt(e.target.dataset.cantiereId));
-            });
-        }
-        
-        if (deleteBtn) {
-            deleteBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                this.removeCantiere(parseInt(e.target.dataset.cantiereId));
-            });
-        }
-    }
-
-    setupCantiereDrop(element, cantiere) {
-        if (this.currentUser.type === 'operaio') return;
-
-        element.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            e.dataTransfer.dropEffect = 'move';
-            if (this.draggedOperaio && this.isDragDropActive) {
-                element.classList.add('drag-over');
-            }
-        });
-        
-        element.addEventListener('dragenter', (e) => {
-            e.preventDefault();
-            if (this.draggedOperaio && this.isDragDropActive) {
-                element.classList.add('drag-over');
-            }
-        });
-        
-        element.addEventListener('dragleave', (e) => {
-            element.classList.remove('drag-over');
-        });
-        
-        element.addEventListener('drop', (e) => {
-            e.preventDefault();
-            element.classList.remove('drag-over');
-            
-            if (this.draggedOperaio && this.isDragDropActive) {
-                this.assignOperaioToCantiere(this.draggedOperaio.id, cantiere.id);
-                
-                // Feedback visivo
-                const feedback = document.createElement('div');
-                feedback.style.cssText = `
-                    position: absolute; top: ${cantiere.y + 90}px; left: ${cantiere.x}px;
-                    background: #27ae60; color: white; padding: 8px 12px; border-radius: 6px;
-                    font-size: 12px; font-weight: bold; z-index: 1001; pointer-events: none;
-                `;
-                feedback.textContent = `✅ ${this.draggedOperaio.nome} assegnato!`;
-                document.getElementById('map-container').appendChild(feedback);
-                
-                setTimeout(() => feedback.remove(), 2000);
-                
-                this.draggedOperaio = null;
-                this.isDragDropActive = false;
-            }
+            container.appendChild(cantiereEl);
         });
     }
 
-    setupCantiereClick(element, cantiere) {
-        element.addEventListener('click', (e) => {
-            if (this.isDragDropActive || e.target.closest('.cantiere-controls')) {
-                return;
-            }
-            this.showCantiereDetails(cantiere.id);
-        });
+    filterCantieri(searchTerm) {
+        this.renderCantieri();
     }
 
     addCantiere() {
@@ -964,10 +714,10 @@ class SseManager {
         this.showModal('modal-cantiere');
     }
 
-    editCantiere(cantiereId) {
-        const cantiere = this.cantieri.find(c => c.id === cantiereId);
+    editCantiere(id) {
+        const cantiere = this.cantieri.find(c => c.id === id);
         if (!cantiere) return;
-        
+
         document.getElementById('modal-cantiere-title').textContent = 'Modifica Cantiere';
         document.getElementById('cantiere-id').value = cantiere.id;
         document.getElementById('cantiere-nome').value = cantiere.nome;
@@ -982,209 +732,535 @@ class SseManager {
         const nome = document.getElementById('cantiere-nome').value.trim();
         const indirizzo = document.getElementById('cantiere-indirizzo').value.trim();
         const tipo = document.getElementById('cantiere-tipo').value;
-        
+
         if (!nome || !indirizzo || !tipo) {
-            alert('Tutti i campi sono obbligatori');
+            alert('Compila tutti i campi obbligatori');
             return;
         }
-        
+
+        const cantiereData = {
+            nome,
+            indirizzo,
+            tipo
+        };
+
         if (id) {
-            const cantiere = this.cantieri.find(c => c.id == id);
-            if (cantiere) {
-                cantiere.nome = nome;
-                cantiere.indirizzo = indirizzo;
-                cantiere.tipo = tipo;
+            // Modifica cantiere esistente
+            const cantiereIndex = this.cantieri.findIndex(c => c.id === parseInt(id));
+            if (cantiereIndex !== -1) {
+                cantiereData.id = parseInt(id);
+                cantiereData.x = this.cantieri[cantiereIndex].x;
+                cantiereData.y = this.cantieri[cantiereIndex].y;
+                cantiereData.operai = this.cantieri[cantiereIndex].operai;
+                cantiereData.calendarSelections = this.cantieri[cantiereIndex].calendarSelections;
+                cantiereData.timeSlot = this.cantieri[cantiereIndex].timeSlot;
+                this.cantieri[cantiereIndex] = cantiereData;
             }
         } else {
-            const newId = Math.max(0, ...this.cantieri.map(c => c.id)) + 1;
-            this.cantieri.push({
-                id: newId, nome, indirizzo, tipo,
-                x: Math.random() * 400 + 100, y: Math.random() * 300 + 100,
-                operai: [], calendarSelections: {}, timeSlot: {start: "08:00", end: "17:00"}
-            });
+            // Nuovo cantiere
+            const newCantiere = {
+                id: Math.max(...this.cantieri.map(c => c.id), 0) + 1,
+                x: Math.random() * 500 + 50,
+                y: Math.random() * 300 + 50,
+                operai: [],
+                calendarSelections: {},
+                timeSlot: { start: "08:00", end: "17:00" },
+                ...cantiereData
+            };
+            this.cantieri.push(newCantiere);
         }
-        
-        this.closeModal('modal-cantiere');
-        this.renderCantieri();
+
         this.saveAllData();
+        this.renderCantieri();
+        this.updateStats();
+        this.closeModal('modal-cantiere');
+        alert('✅ Cantiere salvato con successo');
     }
 
-    removeCantiere(cantiereId) {
-        const cantiere = this.cantieri.find(c => c.id === cantiereId);
-        if (!cantiere) return;
-        
-        if (confirm(`Sei sicuro di voler eliminare il cantiere "${cantiere.nome}"?`)) {
-            // Libera operai assegnati
-            cantiere.operai.forEach(operaioId => {
-                const operaio = this.operai.find(o => o.id === operaioId);
-                if (operaio) operaio.cantiere = null;
+    deleteCantiere(id) {
+        if (confirm('Sei sicuro di voler eliminare questo cantiere? Tutti gli operai verranno rilasciati.')) {
+            // Rilascia operai dal cantiere
+            this.operai.forEach(operaio => {
+                if (operaio.cantiere === id) {
+                    operaio.cantiere = null;
+                }
             });
             
             // Rimuovi cantiere
-            const index = this.cantieri.findIndex(c => c.id === cantiereId);
-            if (index !== -1) this.cantieri.splice(index, 1);
+            this.cantieri = this.cantieri.filter(c => c.id !== id);
             
-            this.renderApp();
             this.saveAllData();
+            this.renderOperai();
+            this.renderCantieri();
+            this.updateStats();
+            alert('✅ Cantiere eliminato');
         }
     }
 
-    assignOperaioToCantiere(operaioId, cantiereId) {
-        const operaio = this.operai.find(o => o.id === operaioId);
-        const cantiere = this.cantieri.find(c => c.id === cantiereId);
-        if (!operaio || !cantiere) return;
+    getCantiereIcon(tipo) {
+        const icons = {
+            'Civile': '🏰',
+            'Industriale': '🏭',
+            'Residenziale': '🏢',
+            'Stradale': '🛣️',
+            'Ferroviario': '🚂'
+        };
+        return icons[tipo] || '🏗️';
+    }
+
+    // ===== DRAG & DROP =====
+    dragStartOperaio(e, operaioId) {
+        if (!this.isDragDropActive) {
+            e.preventDefault();
+            return;
+        }
         
-        // Rimuovi da cantiere precedente
-        if (operaio.cantiere) {
-            const oldCantiere = this.cantieri.find(c => c.id === operaio.cantiere);
-            if (oldCantiere) {
-                oldCantiere.operai = oldCantiere.operai.filter(id => id !== operaioId);
+        this.draggedOperaio = operaioId;
+        e.dataTransfer.setData('text/plain', operaioId.toString());
+        e.target.classList.add('dragging');
+        
+        console.log(`👷 Inizio drag operaio: ${operaioId}`);
+    }
+
+    dragEndOperaio(e) {
+        e.target.classList.remove('dragging');
+        this.draggedOperaio = null;
+    }
+
+    dragStartCantiere(e, cantiereId) {
+        if (!this.isDragDropActive) {
+            e.preventDefault();
+            return;
+        }
+        
+        this.draggedCantiere = cantiereId;
+        e.dataTransfer.setData('text/plain', cantiereId.toString());
+        e.target.classList.add('dragging');
+        
+        console.log(`🏗️ Inizio drag cantiere: ${cantiereId}`);
+    }
+
+    dragEndCantiere(e) {
+        e.target.classList.remove('dragging');
+        
+        if (this.draggedCantiere) {
+            const cantiere = this.cantieri.find(c => c.id === this.draggedCantiere);
+            if (cantiere) {
+                // Aggiorna posizione cantiere
+                const rect = e.target.getBoundingClientRect();
+                const containerRect = e.target.parentElement.getBoundingClientRect();
+                
+                cantiere.x = rect.left - containerRect.left;
+                cantiere.y = rect.top - containerRect.top;
+                
+                this.saveAllData();
+                console.log(`📍 Cantiere ${cantiere.nome} spostato a (${cantiere.x}, ${cantiere.y})`);
             }
         }
         
+        this.draggedCantiere = null;
+    }
+
+    assignOperaioToCantiere(operaioId, cantiereId) {
+        if (!this.isDragDropActive) return;
+        
+        const operaio = this.operai.find(o => o.id === operaioId);
+        const cantiere = this.cantieri.find(c => c.id === cantiereId);
+        
+        if (!operaio || !cantiere) return;
+
+        // Rimuovi operaio dal cantiere precedente
+        const oldCantiere = this.cantieri.find(c => c.id === operaio.cantiere);
+        if (oldCantiere) {
+            oldCantiere.operai = oldCantiere.operai.filter(id => id !== operaioId);
+        }
+
         // Assegna al nuovo cantiere
         operaio.cantiere = cantiereId;
         if (!cantiere.operai.includes(operaioId)) {
             cantiere.operai.push(operaioId);
         }
-        
-        this.renderApp();
+
         this.saveAllData();
-    }
-
-    // ===== FUNZIONI ESISTENTI AGGIORNATE =====
-    handleMenuAction(action) {
-        console.log('Menu action:', action);
-        
-        const actions = {
-            'manage-users': () => this.showUsersManagement(),
-            'export-operai': () => this.exportOperai(),
-            'import-operai': () => this.importOperai(),
-            'focus-search-operai': () => document.getElementById('search-operai').focus(),
-            'focus-search-cantieri': () => document.getElementById('search-cantieri').focus(),
-            'show-operai-list': () => this.showOperaiList(),
-            'show-cantieri-list': () => this.showCantieriList(),
-            'show-modify-cantiere': () => this.showModifyCantiereMenu(),
-            'show-delete-cantiere': () => this.showDeleteCantiereMenu(),
-            'export-data': () => this.exportData(),
-            'import-data': () => this.importData(),
-            'open-settings': () => this.openSettings(),
-            'open-general-settings': () => this.openGeneralSettings(),
-            'show-info': () => this.showInfo(),
-            'logout': () => this.logout()
-        };
-
-        if (actions[action]) {
-            actions[action]();
-            this.closeMenu();
-        }
-    }
-
-    filterOperai() {
         this.renderOperai();
-    }
-
-    isOperaioVisible(operaio) {
-        const searchTerm = document.getElementById('search-operai')?.value.toLowerCase() || '';
-        const specializzazioneFilter = document.getElementById('filter-specializzazione')?.value || '';
-        const livelloFilter = document.getElementById('filter-livello')?.value || '';
-        const prepostoFilter = document.getElementById('filter-preposto')?.value || '';
-
-        if (searchTerm && !operaio.nome.toLowerCase().includes(searchTerm) && 
-            !operaio.specializzazione.toLowerCase().includes(searchTerm) &&
-            !operaio.email.toLowerCase().includes(searchTerm)) {
-            return false;
-        }
-
-        if (specializzazioneFilter && operaio.specializzazione !== specializzazioneFilter) {
-            return false;
-        }
-
-        if (livelloFilter && operaio.livello.toString() !== livelloFilter) {
-            return false;
-        }
-
-        if (prepostoFilter === 'si' && !operaio.preposto) {
-            return false;
-        }
-
-        if (prepostoFilter === 'no' && operaio.preposto) {
-            return false;
-        }
-
-        return true;
-    }
-
-    filterCantieri(searchTerm) {
-        const cantiereElements = document.querySelectorAll('.cantiere');
+        this.renderCantieri();
+        this.updateStats();
         
-        cantiereElements.forEach(element => {
-            const nome = element.querySelector('.cantiere-nome').textContent.toLowerCase();
-            const indirizzo = element.querySelector('.cantiere-indirizzo').textContent.toLowerCase();
-            
-            if (!searchTerm || nome.includes(searchTerm.toLowerCase()) || indirizzo.includes(searchTerm.toLowerCase())) {
-                element.style.display = 'block';
-            } else {
-                element.style.display = 'none';
-            }
+        console.log(`✅ Operaio ${operaio.nome} assegnato a ${cantiere.nome}`);
+    }
+
+    toggleDragDrop() {
+        this.isDragDropActive = !this.isDragDropActive;
+        
+        // Aggiorna interfaccia
+        this.renderOperai();
+        this.renderCantieri();
+        
+        const btn = document.querySelector('.btn-secondary');
+        if (btn) {
+            btn.textContent = this.isDragDropActive ? '🔒 Blocca' : '🔓 Sblocca Drag & Drop';
+        }
+        
+        console.log(`🔄 Drag & Drop ${this.isDragDropActive ? 'attivato' : 'disattivato'}`);
+    }
+
+    // ===== DETTAGLI CANTIERE =====
+    showCantiereDetails(cantiereId) {
+        const cantiere = this.cantieri.find(c => c.id === cantiereId);
+        if (!cantiere) return;
+
+        this.currentCantiereId = cantiereId;
+        
+        // Aggiorna titolo
+        document.getElementById('cantiere-details-title').textContent = cantiere.nome;
+        
+        // Informazioni base
+        const basicInfo = document.getElementById('cantiere-basic-info');
+        basicInfo.innerHTML = `
+            <p><strong>📍 Indirizzo:</strong> ${cantiere.indirizzo}</p>
+            <p><strong>🏗️ Tipo:</strong> ${cantiere.tipo}</p>
+            <p><strong>👷 Operai Assegnati:</strong> ${cantiere.operai.length}</p>
+            <p><strong>⏰ Orario Lavoro:</strong> ${cantiere.timeSlot.start} - ${cantiere.timeSlot.end}</p>
+        `;
+
+        // Lista operai
+        this.renderCantiereOperaiList(cantiereId);
+        
+        // Calendario
+        this.renderCalendar(cantiereId);
+        
+        // Time slot
+        document.getElementById('time-start').value = cantiere.timeSlot.start;
+        document.getElementById('time-end').value = cantiere.timeSlot.end;
+        
+        // Event listeners per time slot
+        document.getElementById('time-start').addEventListener('change', (e) => {
+            cantiere.timeSlot.start = e.target.value;
+            this.saveAllData();
         });
+        
+        document.getElementById('time-end').addEventListener('change', (e) => {
+            cantiere.timeSlot.end = e.target.value;
+            this.saveAllData();
+        });
+
+        this.showModal('modal-cantiere-details');
     }
 
-    updateStats() {
-        const totalOperai = this.operai.length;
-        const assignedOperai = this.operai.filter(o => o.cantiere !== null).length;
-        const totalCantieri = this.cantieri.length;
+    renderCantiereOperaiList(cantiereId) {
+        const listContainer = document.getElementById('cantiere-operai-list');
+        const assignedOperai = this.operai.filter(o => o.cantiere === cantiereId);
+        
+        if (assignedOperai.length === 0) {
+            listContainer.innerHTML = '<p class="no-operai">Nessun operaio assegnato</p>';
+            return;
+        }
 
-        const totalOperaiEl = document.getElementById('total-operai');
-        const assignedOperaiEl = document.getElementById('assigned-operai');
-        const totalCantieriEl = document.getElementById('total-cantieri');
-
-        if (totalOperaiEl) totalOperaiEl.textContent = totalOperai;
-        if (assignedOperaiEl) assignedOperaiEl.textContent = assignedOperai;
-        if (totalCantieriEl) totalCantieriEl.textContent = totalCantieri;
-
-        // Aggiorna anche nel modal info
-        document.getElementById('info-total-operai').textContent = totalOperai;
-        document.getElementById('info-assigned-operai').textContent = assignedOperai;
-        document.getElementById('info-total-cantieri').textContent = totalCantieri;
+        listContainer.innerHTML = assignedOperai.map(operaio => `
+            <div class="cantiere-operaio-item">
+                <div class="operaio-avatar">${operaio.avatar}</div>
+                <div class="operaio-details">
+                    <div class="operaio-nome">${operaio.nome}</div>
+                    <div class="operaio-specializzazione">${operaio.specializzazione} - Liv. ${operaio.livello}</div>
+                    <div class="operaio-contact">📧 ${operaio.email} | 📞 ${operaio.telefono}</div>
+                </div>
+                ${operaio.preposto ? '<span class="preposto-badge">⭐ Preposto</span>' : ''}
+                ${(this.currentUser.type === 'manager' || this.currentUser.type === 'master') ? `
+                <button class="btn-remove" onclick="app.removeOperaioFromCantiere(${operaio.id}, ${cantiereId})">
+                    🗑️
+                </button>
+                ` : ''}
+            </div>
+        `).join('');
     }
 
-    // Gestione dati
-    loadData(key) {
+    removeOperaioFromCantiere(operaioId, cantiereId) {
+        const operaio = this.operai.find(o => o.id === operaioId);
+        const cantiere = this.cantieri.find(c => c.id === cantiereId);
+        
+        if (operaio && cantiere) {
+            operaio.cantiere = null;
+            cantiere.operai = cantiere.operai.filter(id => id !== operaioId);
+            
+            this.saveAllData();
+            this.renderOperai();
+            this.renderCantiereOperaiList(cantiereId);
+            this.updateStats();
+            
+            alert(`✅ ${operaio.nome} rimosso dal cantiere`);
+        }
+    }
+
+    renderCalendar(cantiereId) {
+        const cantiere = this.cantieri.find(c => c.id === cantiereId);
+        if (!cantiere) return;
+
+        // Aggiorna header calendario
+        const monthYear = document.getElementById('calendar-month-year');
+        const monthNames = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno',
+                           'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'];
+        monthYear.textContent = `${monthNames[this.currentMonth]} ${this.currentYear}`;
+
+        // Genera calendario
+        const firstDay = new Date(this.currentYear, this.currentMonth, 1);
+        const lastDay = new Date(this.currentYear, this.currentMonth + 1, 0);
+        const startDate = new Date(firstDay);
+        startDate.setDate(startDate.getDate() - firstDay.getDay());
+
+        const calendarGrid = document.getElementById('calendar-grid');
+        calendarGrid.innerHTML = '';
+
+        // Intestazioni giorni
+        const dayNames = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
+        dayNames.forEach(day => {
+            const dayHeader = document.createElement('div');
+            dayHeader.className = 'calendar-day-header';
+            dayHeader.textContent = day;
+            calendarGrid.appendChild(dayHeader);
+        });
+
+        // Celle calendario
+        const currentDate = new Date(startDate);
+        for (let i = 0; i < 42; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'calendar-cell';
+            
+            if (currentDate.getMonth() === this.currentMonth) {
+                cell.classList.add('current-month');
+                cell.textContent = currentDate.getDate();
+                
+                const dateKey = this.formatDateKey(currentDate);
+                if (cantiere.calendarSelections[dateKey]) {
+                    cell.classList.add('selected');
+                }
+                
+                cell.addEventListener('click', () => {
+                    this.toggleCalendarDate(cantiereId, currentDate);
+                });
+            }
+            
+            calendarGrid.appendChild(cell);
+            currentDate.setDate(currentDate.getDate() + 1);
+        }
+    }
+
+    toggleCalendarDate(cantiereId, date) {
+        const cantiere = this.cantieri.find(c => c.id === cantiereId);
+        if (!cantiere) return;
+
+        const dateKey = this.formatDateKey(date);
+        
+        if (cantiere.calendarSelections[dateKey]) {
+            delete cantiere.calendarSelections[dateKey];
+        } else {
+            cantiere.calendarSelections[dateKey] = true;
+        }
+        
+        this.saveAllData();
+        this.renderCalendar(cantiereId);
+    }
+
+    formatDateKey(date) {
+        return date.toISOString().split('T')[0]; // YYYY-MM-DD
+    }
+
+    changeMonth(delta) {
+        this.currentMonth += delta;
+        
+        if (this.currentMonth > 11) {
+            this.currentMonth = 0;
+            this.currentYear++;
+        } else if (this.currentMonth < 0) {
+            this.currentMonth = 11;
+            this.currentYear--;
+        }
+        
+        this.renderCalendar(this.currentCantiereId);
+    }
+
+    closeCantiereModal() {
+        this.closeModal('modal-cantiere-details');
+        this.currentCantiereId = null;
+    }
+
+    // ===== EMAIL SYSTEM =====
+    sendParticipationEmails() {
+        const cantiere = this.cantieri.find(c => c.id === this.currentCantiereId);
+        if (!cantiere) return;
+
+        const assignedOperai = this.operai.filter(o => o.cantiere === cantiere.id);
+        if (assignedOperai.length === 0) {
+            alert('❌ Nessun operaio assegnato al cantiere');
+            return;
+        }
+
+        // Simulazione invio email
+        console.log('📧 Invio email di partecipazione:');
+        assignedOperai.forEach(operaio => {
+            console.log(`   → Inviata a: ${operaio.email} (${operaio.nome})`);
+        });
+
+        alert(`✅ Email di partecipazione inviate a ${assignedOperai.length} operai`);
+    }
+
+    // ===== GESTIONE DATI =====
+    exportOperaiToExcel() {
+        // Prepara i dati per l'export
+        const data = this.operai.map(operaio => {
+            const cantiere = operaio.cantiere ? this.cantieri.find(c => c.id === operaio.cantiere) : null;
+            
+            return {
+                'ID': operaio.id,
+                'Nome Completo': operaio.nome,
+                'Email': operaio.email,
+                'Telefono': operaio.telefono,
+                'Specializzazione': operaio.specializzazione,
+                'Livello': operaio.livello,
+                'Preposto': operaio.preposto ? 'Sì' : 'No',
+                'Cantiere Assegnato': cantiere ? cantiere.nome : 'Nessuno',
+                'Indirizzo Cantiere': cantiere ? cantiere.indirizzo : '',
+                'Tipo Cantiere': cantiere ? cantiere.tipo : ''
+            };
+        });
+
+        // Crea CSV nel formato richiesto
+        const headers = ['ID', 'Nome Completo', 'Email', 'Telefono', 'Specializzazione', 'Livello', 'Preposto', 'Cantiere Assegnato', 'Indirizzo Cantiere', 'Tipo Cantiere'];
+        const csvContent = [
+            headers.join(','),
+            ...data.map(row => headers.map(header => {
+                let value = row[header] || '';
+                // Escape valori che contengono virgole
+                if (typeof value === 'string' && value.includes(',')) {
+                    value = `"${value}"`;
+                }
+                return value;
+            }).join(','))
+        ].join('\n');
+
+        // Crea e scarica file
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        
+        link.setAttribute('href', url);
+        link.setAttribute('download', `dipendenti_${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        console.log('📤 Export dipendenti completato');
+    }
+
+    importOperaiFromCSV(csvText) {
         try {
-            const data = localStorage.getItem(`sse_manager_${key}`);
-            return data ? JSON.parse(data) : null;
+            const lines = csvText.split('\n').filter(line => line.trim());
+            const headers = lines[0].split(',').map(h => h.trim());
+            
+            const newOperai = [];
+            
+            for (let i = 1; i < lines.length; i++) {
+                const values = this.parseCSVLine(lines[i]);
+                if (values.length !== headers.length) continue;
+                
+                const row = {};
+                headers.forEach((header, index) => {
+                    row[header] = values[index];
+                });
+                
+                // Mappa i campi CSV alla struttura operai
+                const operaio = {
+                    id: parseInt(row['ID']) || Math.max(...this.operai.map(o => o.id), 0) + 1,
+                    nome: row['Nome Completo'] || '',
+                    email: row['Email'] || '',
+                    telefono: row['Telefono'] || '',
+                    specializzazione: row['Specializzazione'] || '',
+                    livello: parseInt(row['Livello']) || 1,
+                    preposto: row['Preposto'] === 'Sì',
+                    cantiere: null, // Verrà assegnato successivamente
+                    avatar: this.getAvatarForSpecialization(row['Specializzazione'] || '')
+                };
+                
+                newOperai.push(operaio);
+            }
+            
+            // Sostituisci gli operai esistenti
+            this.operai = newOperai;
+            this.saveAllData();
+            this.renderOperai();
+            this.updateStats();
+            
+            alert(`✅ Importati ${newOperai.length} operai`);
+            
         } catch (error) {
-            console.error('Errore nel caricamento dati:', error);
-            return null;
+            console.error('❌ Errore durante l\'import:', error);
+            alert('❌ Errore durante l\'import del file CSV');
         }
     }
 
-    saveData(key, data) {
-        try {
-            localStorage.setItem(`sse_manager_${key}`, JSON.stringify(data));
-            return true;
-        } catch (error) {
-            console.error('Errore nel salvataggio dati:', error);
-            return false;
+    parseCSVLine(line) {
+        const result = [];
+        let current = '';
+        let inQuotes = false;
+        
+        for (let i = 0; i < line.length; i++) {
+            const char = line[i];
+            
+            if (char === '"') {
+                inQuotes = !inQuotes;
+            } else if (char === ',' && !inQuotes) {
+                result.push(current.trim());
+                current = '';
+            } else {
+                current += char;
+            }
         }
+        
+        result.push(current.trim());
+        return result;
     }
 
-    saveAllData() {
-        this.saveData('operai', this.operai);
-        this.saveData('cantieri', this.cantieri);
-        this.saveData('users', this.users);
+    // ===== IMPOSTAZIONI =====
+    showSettings() {
+        this.showModal('modal-settings');
+        this.showSettingsTab('email');
     }
 
-    setupAutoSave() {
-        if (this.autoSaveEnabled) {
-            setInterval(() => {
-                this.saveAllData();
-            }, 30000);
-        }
+    showSettingsTab(tabName) {
+        // Nascondi tutti i tab
+        document.querySelectorAll('.tab-content').forEach(tab => {
+            tab.classList.add('hidden');
+        });
+        
+        // Rimuovi active da tutte le tab
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        
+        // Mostra tab selezionato
+        document.getElementById(`settings-${tabName}`).classList.remove('hidden');
+        document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
     }
 
-    // Menu functions
+    closeSettings() {
+        this.closeModal('modal-settings');
+    }
+
+    showInfo() {
+        // Aggiorna statistiche
+        document.getElementById('info-total-operai').textContent = this.operai.length;
+        document.getElementById('info-assigned-operai').textContent = this.operai.filter(o => o.cantiere).length;
+        document.getElementById('info-total-cantieri').textContent = this.cantieri.length;
+        
+        this.showModal('modal-info');
+    }
+
+    closeInfo() {
+        this.closeModal('modal-info');
+    }
+
+    // ===== MENU SYSTEM =====
     toggleMenu() {
         const menu = document.getElementById('menu-dropdown');
         menu.classList.toggle('hidden');
@@ -1195,6 +1271,96 @@ class SseManager {
         menu.classList.add('hidden');
     }
 
+    handleMenuAction(action) {
+        this.closeMenu();
+        
+        switch (action) {
+            case 'manage-users':
+                this.showUsersManagement();
+                break;
+                
+            case 'export-operai':
+                this.exportOperaiToExcel();
+                break;
+                
+            case 'import-operai':
+                this.handleImportOperai();
+                break;
+                
+            case 'focus-search-operai':
+                document.getElementById('search-operai').focus();
+                break;
+                
+            case 'focus-search-cantieri':
+                document.getElementById('search-cantieri').focus();
+                break;
+                
+            case 'show-operai-list':
+                // Già visibile
+                break;
+                
+            case 'show-cantieri-list':
+                // Già visibile
+                break;
+                
+            case 'show-modify-cantiere':
+                alert('💡 Clicca sul pulsante ✏️ di un cantiere per modificarlo');
+                break;
+                
+            case 'show-delete-cantiere':
+                alert('💡 Clicca sul pulsante 🗑️ di un cantiere per eliminarlo');
+                break;
+                
+            case 'export-data':
+                this.exportAllData();
+                break;
+                
+            case 'import-data':
+                this.importAllData();
+                break;
+                
+            case 'open-settings':
+                this.showSettings();
+                break;
+                
+            case 'open-general-settings':
+                this.showSettings();
+                this.showSettingsTab('general');
+                break;
+                
+            case 'show-info':
+                this.showInfo();
+                break;
+                
+            case 'logout':
+                this.logout();
+                break;
+                
+            default:
+                console.log('Azione menu non gestita:', action);
+        }
+    }
+
+    handleImportOperai() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.csv';
+        
+        input.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                this.importOperaiFromCSV(event.target.result);
+            };
+            reader.readAsText(file);
+        };
+        
+        input.click();
+    }
+
+    // ===== UTILITIES =====
     showModal(modalId) {
         document.getElementById(modalId).classList.remove('hidden');
     }
@@ -1203,85 +1369,88 @@ class SseManager {
         document.getElementById(modalId).classList.add('hidden');
     }
 
-    // Funzioni varie
-    showOperaiList() {
-        const operaiList = this.operai.map(o => `${o.nome} - ${o.specializzazione} - Livello ${o.livello}`).join('\n');
-        alert(`👷 LISTA OPERAI:\n\n${operaiList}`);
+    updateStats() {
+        const totalOperai = this.operai.length;
+        const assignedOperai = this.operai.filter(o => o.cantiere).length;
+        const totalCantieri = this.cantieri.length;
+
+        document.getElementById('total-operai').textContent = totalOperai;
+        document.getElementById('assigned-operai').textContent = assignedOperai;
+        document.getElementById('total-cantieri').textContent = totalCantieri;
     }
 
-    showCantieriList() {
-        const cantieriList = this.cantieri.map(c => `${c.nome} - ${c.tipo} - ${c.operai.length} operai`).join('\n');
-        alert(`🏗️ LISTA CANTIERI:\n\n${cantieriList}`);
+    renderApp() {
+        this.renderOperai();
+        this.renderCantieri();
+        this.updateStats();
     }
 
-    showModifyCantiereMenu() {
-        if (this.cantieri.length === 0) {
-            alert('⚠️ Nessun cantiere disponibile per la modifica');
-            return;
-        }
-        
-        const cantiereNames = this.cantieri.map(c => `${c.nome} (${c.tipo})`).join('\n');
-        const cantiereName = prompt(`Quale cantiere vuoi modificare?\n\n${cantiereNames}\n\nInserisci il nome esatto:`);
-        
-        if (cantiereName) {
-            const cantiere = this.cantieri.find(c => c.nome === cantiereName);
-            if (cantiere) {
-                this.editCantiere(cantiere.id);
-            } else {
-                alert('❌ Cantiere non trovato');
-            }
+    // ===== GESTIONE DATI LOCALI =====
+    loadData(key) {
+        try {
+            const data = localStorage.getItem(`sse-manager-${key}`);
+            return data ? JSON.parse(data) : null;
+        } catch (error) {
+            console.error(`❌ Errore nel caricamento ${key}:`, error);
+            return null;
         }
     }
 
-    showDeleteCantiereMenu() {
-        if (this.cantieri.length === 0) {
-            alert('⚠️ Nessun cantiere disponibile per l\'eliminazione');
-            return;
-        }
-        
-        const cantiereNames = this.cantieri.map(c => `${c.nome} (${c.tipo})`).join('\n');
-        const cantiereName = prompt(`Quale cantiere vuoi eliminare?\n\n${cantiereNames}\n\nInserisci il nome esatto:`);
-        
-        if (cantiereName) {
-            const cantiere = this.cantieri.find(c => c.nome === cantiereName);
-            if (cantiere) {
-                this.removeCantiere(cantiere.id);
-            } else {
-                alert('❌ Cantiere non trovato');
-            }
+    saveData(key, data) {
+        try {
+            localStorage.setItem(`sse-manager-${key}`, JSON.stringify(data));
+        } catch (error) {
+            console.error(`❌ Errore nel salvataggio ${key}:`, error);
         }
     }
 
-    exportData() {
+    saveAllData() {
+        if (!this.autoSaveEnabled) return;
+        
+        this.saveData('operai', this.operai);
+        this.saveData('cantieri', this.cantieri);
+        this.saveData('users', this.users);
+        
+        console.log('💾 Dati salvati');
+    }
+
+    setupAutoSave() {
+        // Salva automaticamente ogni 30 secondi
+        setInterval(() => {
+            this.saveAllData();
+        }, 30000);
+    }
+
+    exportAllData() {
         const data = {
             operai: this.operai,
             cantieri: this.cantieri,
             users: this.users,
             exportDate: new Date().toISOString(),
-            version: '1.5'
+            version: '1.6'
         };
-
-        const dataStr = JSON.stringify(data, null, 2);
-        const dataBlob = new Blob([dataStr], { type: 'application/json' });
         
-        const url = URL.createObjectURL(dataBlob);
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const link = document.createElement('a');
-        link.href = url;
-        link.download = `sse_manager_backup_${new Date().toISOString().split('T')[0]}.json`;
+        const url = URL.createObjectURL(blob);
+        
+        link.setAttribute('href', url);
+        link.setAttribute('download', `sse-manager-backup-${new Date().toISOString().split('T')[0]}.json`);
+        link.style.visibility = 'hidden';
+        
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        URL.revokeObjectURL(url);
         
-        alert('✅ Dati esportati con successo!');
+        console.log('💾 Backup dati esportato');
     }
 
-    importData() {
-        const fileInput = document.createElement('input');
-        fileInput.type = 'file';
-        fileInput.accept = '.json';
+    importAllData() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
         
-        fileInput.onchange = (e) => {
+        input.onchange = (e) => {
             const file = e.target.files[0];
             if (!file) return;
             
@@ -1290,259 +1459,26 @@ class SseManager {
                 try {
                     const data = JSON.parse(event.target.result);
                     
-                    // Validazione dati
-                    if (!data.operai || !data.cantieri) {
-                        throw new Error('File non valido: struttura dati mancante');
-                    }
+                    if (data.operai) this.operai = data.operai;
+                    if (data.cantieri) this.cantieri = data.cantieri;
+                    if (data.users) this.users = data.users;
                     
-                    if (confirm(`Importare ${data.operai.length} operai e ${data.cantieri.length} cantieri? I dati attuali verranno sovrascritti.`)) {
-                        this.operai = data.operai;
-                        this.cantieri = data.cantieri;
-                        this.users = data.users || this.users;
-                        this.saveAllData();
-                        this.renderApp();
-                        alert('✅ Dati importati con successo!');
-                    }
+                    this.saveAllData();
+                    this.renderApp();
+                    
+                    alert('✅ Dati importati con successo');
                 } catch (error) {
-                    alert('❌ Errore nell\'importazione: ' + error.message);
+                    console.error('❌ Errore durante l\'import:', error);
+                    alert('❌ Errore durante l\'import del file');
                 }
             };
-            
             reader.readAsText(file);
         };
         
-        fileInput.click();
-    }
-
-    openSettings() {
-        this.showModal('modal-settings');
-        this.showSettingsTab('email');
-    }
-
-    openGeneralSettings() {
-        this.showModal('modal-settings');
-        this.showSettingsTab('general');
-    }
-
-    showSettingsTab(tabName) {
-        // Nascondi tutti i tab
-        document.querySelectorAll('.tab-content').forEach(tab => {
-            tab.classList.add('hidden');
-        });
-        
-        // Rimuovi classe active da tutti i tab
-        document.querySelectorAll('.tab').forEach(tab => {
-            tab.classList.remove('active');
-        });
-        
-        // Mostra il tab selezionato
-        document.getElementById(`settings-${tabName}`).classList.remove('hidden');
-        
-        // Aggiungi classe active al tab cliccato
-        document.querySelector(`.tab[data-tab="${tabName}"]`).classList.add('active');
-    }
-
-    closeSettings() {
-        this.closeModal('modal-settings');
-    }
-
-    showInfo() {
-        // Aggiorna le statistiche nel modal info
-        document.getElementById('info-total-operai').textContent = this.operai.length;
-        document.getElementById('info-assigned-operai').textContent = this.operai.filter(o => o.cantiere !== null).length;
-        document.getElementById('info-total-cantieri').textContent = this.cantieri.length;
-        
-        this.showModal('modal-info');
-    }
-
-    closeInfo() {
-        this.closeModal('modal-info');
-    }
-
-    // Funzioni dettagli cantiere
-    showCantiereDetails(cantiereId) {
-        const cantiere = this.cantieri.find(c => c.id === cantiereId);
-        if (!cantiere) return;
-        
-        this.currentCantiereId = cantiereId;
-        document.getElementById('cantiere-details-title').textContent = `Dettagli: ${cantiere.nome}`;
-        
-        const icons = {'Civile': '🏰', 'Industriale': '🏭', 'Residenziale': '🏢'};
-        const icon = icons[cantiere.tipo] || '🏗️';
-        
-        document.getElementById('cantiere-basic-info').innerHTML = `
-            <p><strong>Nome:</strong> ${icon} ${cantiere.nome}</p>
-            <p><strong>Indirizzo:</strong> ${cantiere.indirizzo}</p>
-            <p><strong>Tipo:</strong> ${cantiere.tipo}</p>
-            <p><strong>Posizione:</strong> X: ${Math.round(cantiere.x)}, Y: ${Math.round(cantiere.y)}</p>
-            <p><strong>Operai Assegnati:</strong> ${cantiere.operai.length}</p>
-        `;
-        
-        const operaiAssegnati = cantiere.operai.map(id => this.operai.find(o => o.id === id)).filter(o => o);
-        let operaiHtml = '';
-        
-        if (operaiAssegnati.length > 0) {
-            operaiAssegnati.forEach(operaio => {
-                const prepostoText = operaio.preposto ? ' ⭐ PREPOSTO' : '';
-                operaiHtml += `
-                    <div class="operaio-detail">
-                        <strong>${operaio.avatar} ${operaio.nome}${prepostoText}</strong><br>
-                        <small>${operaio.specializzazione} - Livello ${operaio.livello}</small><br>
-                        <small>📧 ${operaio.email} | 📞 ${operaio.telefono}</small>
-                        <button onclick="app.unassignOperaio(${operaio.id}, ${cantiereId})" 
-                                style="float:right; background:#e74c3c; color:white; border:none; padding:4px 8px; border-radius:4px; font-size:10px; cursor:pointer;">
-                            Rimuovi
-                        </button>
-                    </div>
-                `;
-            });
-        } else {
-            operaiHtml = '<p style="color: #95a5a6; font-style: italic;">Nessun operaio assegnato</p>';
-        }
-        
-        document.getElementById('cantiere-operai-list').innerHTML = operaiHtml;
-        this.renderCalendar();
-        document.getElementById('time-start').value = cantiere.timeSlot?.start || '08:00';
-        document.getElementById('time-end').value = cantiere.timeSlot?.end || '17:00';
-        this.showModal('modal-cantiere-details');
-    }
-
-    unassignOperaio(operaioId, cantiereId) {
-        const operaio = this.operai.find(o => o.id === operaioId);
-        const cantiere = this.cantieri.find(c => c.id === cantiereId);
-        if (!operaio || !cantiere) return;
-        
-        operaio.cantiere = null;
-        cantiere.operai = cantiere.operai.filter(id => id !== operaioId);
-        
-        this.renderApp();
-        this.saveAllData();
-        
-        if (this.currentCantiereId === cantiereId) {
-            this.showCantiereDetails(cantiereId);
-        }
-    }
-
-    renderCalendar() {
-        const monthNames = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'];
-        const dayNames = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
-        
-        document.getElementById('calendar-month-year').textContent = `${monthNames[this.currentMonth]} ${this.currentYear}`;
-        
-        const firstDay = new Date(this.currentYear, this.currentMonth, 1);
-        const startDate = new Date(firstDay);
-        startDate.setDate(startDate.getDate() - firstDay.getDay());
-        
-        let calendarHtml = '';
-        dayNames.forEach(day => calendarHtml += `<div class="calendar-day-header">${day}</div>`);
-        
-        const current = new Date(startDate);
-        for (let i = 0; i < 42; i++) {
-            const dayNum = current.getDate();
-            const isCurrentMonth = current.getMonth() === this.currentMonth;
-            const isSelected = this.isCalendarDaySelected(current);
-            
-            let dayClass = 'calendar-day';
-            if (!isCurrentMonth) dayClass += ' other-month';
-            if (isSelected) dayClass += ' selected';
-            
-            calendarHtml += `<div class="${dayClass}" data-date="${current.toISOString()}">${dayNum}</div>`;
-            current.setDate(current.getDate() + 1);
-        }
-        
-        document.getElementById('calendar-grid').innerHTML = calendarHtml;
-        
-        // Aggiungi event listeners ai giorni
-        document.querySelectorAll('.calendar-day').forEach(day => {
-            day.addEventListener('click', () => {
-                this.toggleCalendarDay(day.dataset.date);
-            });
-        });
-    }
-
-    isCalendarDaySelected(date) {
-        if (!this.currentCantiereId) return false;
-        const cantiere = this.cantieri.find(c => c.id === this.currentCantiereId);
-        if (!cantiere || !cantiere.calendarSelections) return false;
-        const dateStr = new Date(date).toISOString().split('T')[0];
-        return cantiere.calendarSelections[dateStr] === true;
-    }
-
-    toggleCalendarDay(dateStr) {
-        if (!this.currentCantiereId) return;
-        const cantiere = this.cantieri.find(c => c.id === this.currentCantiereId);
-        if (!cantiere) return;
-        
-        if (!cantiere.calendarSelections) cantiere.calendarSelections = {};
-        const dateKey = new Date(dateStr).toISOString().split('T')[0];
-        cantiere.calendarSelections[dateKey] = !cantiere.calendarSelections[dateKey];
-        this.renderCalendar();
-        this.saveAllData();
-    }
-
-    changeMonth(direction) {
-        this.currentMonth += direction;
-        
-        if (this.currentMonth < 0) {
-            this.currentMonth = 11;
-            this.currentYear--;
-        } else if (this.currentMonth > 11) {
-            this.currentMonth = 0;
-            this.currentYear++;
-        }
-        
-        this.renderCalendar();
-    }
-
-    sendParticipationEmails() {
-        if (!this.currentCantiereId) return;
-        const cantiere = this.cantieri.find(c => c.id === this.currentCantiereId);
-        if (!cantiere) return;
-        
-        const operaiAssegnati = cantiere.operai.map(id => this.operai.find(o => o.id === id)).filter(o => o);
-        if (operaiAssegnati.length === 0) {
-            alert('⚠️ Nessun operaio assegnato a questo cantiere');
-            return;
-        }
-        
-        const selectedDates = Object.keys(cantiere.calendarSelections || {}).filter(date => cantiere.calendarSelections[date]);
-        if (selectedDates.length === 0) {
-            alert('⚠️ Nessun giorno selezionato nel calendario');
-            return;
-        }
-        
-        const button = document.getElementById('btn-send-emails');
-        const originalText = button.textContent;
-        button.textContent = '📤 Invio in corso...';
-        button.disabled = true;
-        
-        setTimeout(() => {
-            const giorni = selectedDates.map(date => new Date(date).toLocaleDateString('it-IT')).join(', ');
-            const orario = `${cantiere.timeSlot?.start || '08:00'} - ${cantiere.timeSlot?.end || '17:00'}`;
-            
-            // Simulazione invio email
-            operaiAssegnati.forEach(operaio => {
-                console.log(`📧 Email inviata a ${operaio.email}:`);
-                console.log(`Oggetto: Convocazione per il cantiere ${cantiere.nome}`);
-                console.log(`Messaggio: Gentile ${operaio.nome}, sei convocato al cantiere ${cantiere.nome} nei giorni ${giorni} con orario ${orario}.`);
-            });
-            
-            // Feedback all'utente
-            alert(`✅ Email inviate a ${operaiAssegnati.length} operai per i giorni: ${giorni}`);
-            
-            // Ripristina il bottone
-            button.textContent = originalText;
-            button.disabled = false;
-        }, 2000);
-    }
-
-    closeCantiereModal() {
-        this.closeModal('modal-cantiere-details');
-        this.currentCantiereId = null;
+        input.click();
     }
 }
 
-// Inizializza l'app quando il DOM è pronto
-document.addEventListener('DOMContentLoaded', () => {
-    window.app = new SseManager();
-});
+// Inizializzazione app
+const app = new SseManager();
+console.log('🎉 Sse Manager Ver 1.6 pronto!');
