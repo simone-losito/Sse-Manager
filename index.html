@@ -12,7 +12,7 @@
         <div class="login-container">
             <h1>🏗️ Sse Manager</h1>
             <p class="subtitle">Sviluppato e pensato da Simone Losito</p>
-            <button onclick="loginMaster()" class="btn btn-primary">🚀 Entra come Manager</button>
+            <button onclick="app.loginMaster()" class="btn btn-primary">🚀 Entra come Manager</button>
         </div>
     </div>
 
@@ -26,21 +26,21 @@
             </div>
             <div class="header-right">
                 <div class="menu-container">
-                    <button onclick="toggleMenu()" class="menu-btn">☰ Menu</button>
+                    <button onclick="app.toggleMenu()" class="menu-btn">☰ Menu</button>
                     <div id="menu-dropdown" class="menu-dropdown hidden">
-                        <div class="menu-item" onclick="focusSearchOperai()">🔍 Cerca Operai</div>
-                        <div class="menu-item" onclick="focusSearchCantieri()">🔍 Cerca Cantieri</div>
+                        <div class="menu-item" onclick="app.focusSearchOperai()">🔍 Cerca Operai</div>
+                        <div class="menu-item" onclick="app.focusSearchCantieri()">🔍 Cerca Cantieri</div>
                         <div class="menu-separator"></div>
-                        <div class="menu-item" onclick="showOperaiList()">👷 Lista Operai</div>
-                        <div class="menu-item" onclick="showCantieriList()">🏗️ Lista Cantieri</div>
+                        <div class="menu-item" onclick="app.showOperaiList()">👷 Lista Operai</div>
+                        <div class="menu-item" onclick="app.showCantieriList()">🏗️ Lista Cantieri</div>
                         <div class="menu-separator"></div>
-                        <div class="menu-item" onclick="showModifyCantiereMenu()">✏️ Modifica Cantiere</div>
-                        <div class="menu-item" onclick="showDeleteCantiereMenu()">🗑️ Elimina Cantiere</div>
+                        <div class="menu-item" onclick="app.showModifyCantiereMenu()">✏️ Modifica Cantiere</div>
+                        <div class="menu-item" onclick="app.showDeleteCantiereMenu()">🗑️ Elimina Cantiere</div>
                         <div class="menu-separator"></div>
-                        <div class="menu-item" onclick="openSettings()">📧 Impostazioni Email</div>
-                        <div class="menu-item" onclick="openGeneralSettings()">⚙️ Impostazioni Generali</div>
+                        <div class="menu-item" onclick="app.openSettings()">📧 Impostazioni Email</div>
+                        <div class="menu-item" onclick="app.openGeneralSettings()">⚙️ Impostazioni Generali</div>
                         <div class="menu-separator"></div>
-                        <div class="menu-item" onclick="logout()">🚪 Logout</div>
+                        <div class="menu-item" onclick="app.logout()">🚪 Logout</div>
                     </div>
                 </div>
             </div>
@@ -124,7 +124,7 @@
                 </div>
                 
                 <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal()">❌ Annulla</button>
+                    <button type="button" class="btn btn-secondary" onclick="app.closeModal()">❌ Annulla</button>
                     <button type="submit" class="btn btn-primary">💾 Salva</button>
                 </div>
             </form>
@@ -156,7 +156,7 @@
                 </div>
                 
                 <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal()">❌ Annulla</button>
+                    <button type="button" class="btn btn-secondary" onclick="app.closeModal()">❌ Annulla</button>
                     <button type="submit" class="btn btn-primary">💾 Salva</button>
                 </div>
             </form>
@@ -181,9 +181,9 @@
 
                 <div class="calendar-section">
                     <div class="calendar-header">
-                        <button class="calendar-nav" onclick="changeMonth(-1)">‹</button>
+                        <button class="calendar-nav" onclick="app.changeMonth(-1)">‹</button>
                         <h4 id="calendar-month-year"></h4>
-                        <button class="calendar-nav" onclick="changeMonth(1)">›</button>
+                        <button class="calendar-nav" onclick="app.changeMonth(1)">›</button>
                     </div>
                     <div class="calendar-grid" id="calendar-grid"></div>
                 </div>
@@ -192,24 +192,24 @@
                     <h4>⏰ Orario di Lavoro</h4>
                     <div class="time-inputs">
                         <label>
-                            Inizio: <input type="time" id="time-start" class="form-control" onchange="handleTimeChange()">
+                            Inizio: <input type="time" id="time-start" class="form-control" onchange="app.handleTimeChange()">
                         </label>
                         <label>
-                            Fine: <input type="time" id="time-end" class="form-control" onchange="handleTimeChange()">
+                            Fine: <input type="time" id="time-end" class="form-control" onchange="app.handleTimeChange()">
                         </label>
                     </div>
                 </div>
 
                 <div class="email-section">
                     <h4>📧 Invio Email di Partecipazione</h4>
-                    <button id="btn-send-emails" class="btn-send-email" onclick="sendParticipationEmails()">
+                    <button id="btn-send-emails" class="btn-send-email" onclick="app.sendParticipationEmails()">
                         📤 Invia Email agli Operai
                     </button>
                 </div>
             </div>
 
             <div class="modal-actions">
-                <button class="btn btn-primary" onclick="closeCantiereModal()">✅ Chiudi</button>
+                <button class="btn btn-primary" onclick="app.closeCantiereModal()">✅ Chiudi</button>
             </div>
         </div>
     </div>
@@ -220,8 +220,8 @@
             <h3>⚙️ Impostazioni Sistema</h3>
             
             <div class="tabs-container">
-                <div class="tab active" onclick="showSettingsTab('email')">📧 Email</div>
-                <div class="tab" onclick="showSettingsTab('general')">🌐 Generali</div>
+                <div class="tab active" onclick="app.showSettingsTab('email')">📧 Email</div>
+                <div class="tab" onclick="app.showSettingsTab('general')">🌐 Generali</div>
             </div>
 
             <!-- TAB EMAIL -->
@@ -264,9 +264,9 @@
                 </div>
                 
                 <div class="email-actions">
-                    <button onclick="testEmailConnection()" class="btn btn-secondary">🔧 Test Connessione</button>
-                    <button onclick="resetEmailSettings()" class="btn btn-secondary">🔄 Reset</button>
-                    <button onclick="saveEmailSettings()" class="btn btn-primary">💾 Salva</button>
+                    <button onclick="app.testEmailConnection()" class="btn btn-secondary">🔧 Test Connessione</button>
+                    <button onclick="app.resetEmailSettings()" class="btn btn-secondary">🔄 Reset</button>
+                    <button onclick="app.saveEmailSettings()" class="btn btn-primary">💾 Salva</button>
                 </div>
             </div>
 
@@ -309,13 +309,13 @@
                 </div>
                 
                 <div class="general-actions">
-                    <button onclick="resetGeneralSettings()" class="btn btn-secondary">🔄 Reset</button>
-                    <button onclick="saveGeneralSettings()" class="btn btn-primary">💾 Salva</button>
+                    <button onclick="app.resetGeneralSettings()" class="btn btn-secondary">🔄 Reset</button>
+                    <button onclick="app.saveGeneralSettings()" class="btn btn-primary">💾 Salva</button>
                 </div>
             </div>
 
             <div class="modal-actions">
-                <button class="btn btn-primary" onclick="closeSettings()">✅ Chiudi</button>
+                <button class="btn btn-primary" onclick="app.closeSettings()">✅ Chiudi</button>
             </div>
         </div>
     </div>
