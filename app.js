@@ -395,35 +395,45 @@ class SseManager {
     setupCantiereDrag(element, cantiere) {
         element.draggable = true;
         
+        let dragOffsetX = 0;
+        let dragOffsetY = 0;
+        
         element.ondragstart = (e) => {
             this.draggedCantiere = cantiere;
             this.isDragDropActive = true;
             e.dataTransfer.effectAllowed = 'move';
             e.dataTransfer.setData('text/plain', 'cantiere-' + cantiere.id);
             element.classList.add('dragging');
+            
+            // Calcola l'offset del mouse rispetto all'elemento
+            const rect = element.getBoundingClientRect();
+            dragOffsetX = e.clientX - rect.left;
+            dragOffsetY = e.clientY - rect.top;
         };
         
         element.ondragend = (e) => {
             element.classList.remove('dragging');
             
-            // CORREZIONE: Salva la posizione corretta
             if (this.draggedCantiere) {
-                const rect = element.getBoundingClientRect();
                 const container = document.getElementById('map-container');
                 const containerRect = container.getBoundingClientRect();
                 
-                // Calcola la posizione relativa al container
-                const x = rect.left - containerRect.left + container.scrollLeft;
-                const y = rect.top - containerRect.top + container.scrollTop;
+                // Calcola la nuova posizione considerando l'offset
+                const x = e.clientX - containerRect.left - dragOffsetX + container.scrollLeft;
+                const y = e.clientY - containerRect.top - dragOffsetY + container.scrollTop;
                 
-                this.draggedCantiere.x = Math.max(0, x);
-                this.draggedCantiere.y = Math.max(0, y);
+                // Limita la posizione ai confini del container
+                const maxX = containerRect.width - element.offsetWidth;
+                const maxY = containerRect.height - element.offsetHeight;
                 
-                console.log(`📍 Cantiere ${cantiere.nome} spostato a: X=${x}, Y=${y}`);
+                this.draggedCantiere.x = Math.max(0, Math.min(x, maxX));
+                this.draggedCantiere.y = Math.max(0, Math.min(y, maxY));
                 
-                // Aggiorna la posizione CSS immediatamente
-                element.style.left = x + 'px';
-                element.style.top = y + 'px';
+                console.log(`📍 Cantiere ${cantiere.nome} spostato a: X=${this.draggedCantiere.x}, Y=${this.draggedCantiere.y}`);
+                
+                // Aggiorna la posizione CSS
+                element.style.left = this.draggedCantiere.x + 'px';
+                element.style.top = this.draggedCantiere.y + 'px';
             }
             
             setTimeout(() => {
@@ -805,4 +815,136 @@ class SseManager {
         
         setTimeout(() => {
             const giorni = selectedDates.map(date => new Date(date).toLocaleDateString('it-IT')).join(', ');
-            const orario = `${cantiere.timeSlot?.
+            const orario = `${cantiere.timeSlot?.start || '08:00'} - ${cantiere.timeSlot?.end || '17:00'}`;
+            
+            // Simulazione invio email
+            operaiAssegnati.forEach(operaio => {
+                console.log(`📧 Email inviata a ${operaio.email}:`);
+                console.log(`Oggetto: Convocazione per il cantiere ${cantiere.nome}`);
+                console.log(`Messaggio: Gentile ${operaio.nome}, sei convocato al cantiere ${cantiere.nome} nei giorni ${giorni} con orario ${orario}.`);
+            });
+            
+            // Feedback all'utente
+            alert(`✅ Email inviate a ${operaiAssegnati.length} operai per i giorni: ${giorni}`);
+            
+            // Ripristina il bottone
+            button.textContent = originalText;
+            button.disabled = false;
+        }, 2000);
+    }
+
+    // ===== FUNZIONI MENU =====
+    toggleMenu() {
+        const dropdown = document.getElementById('menu-dropdown');
+        dropdown.classList.toggle('hidden');
+    }
+
+    closeMenu() {
+        document.getElementById('menu-dropdown').classList.add('hidden');
+    }
+
+    focusSearchOperai() {
+        document.getElementById('search-operai').focus();
+    }
+
+    focusSearchCantieri() {
+        document.getElementById('search-cantieri').focus();
+    }
+
+    showOperaiList() {
+        const operaiList = this.operai.map(o => `${o.nome} - ${o.specializzazione} - Livello ${o.livello}`).join('\n');
+        alert(`👷 LISTA OPERAI:\n\n${operaiList}`);
+    }
+
+    showCantieriList() {
+        const cantieriList = this.cantieri.map(c => `${c.nome} - ${c.tipo} - ${c.operai.length} operai`).join('\n');
+        alert(`🏗️ LISTA CANTIERI:\n\n${cantieriList}`);
+    }
+
+    showModifyCantiereMenu() {
+        if (this.cantieri.length === 0) {
+            alert('⚠️ Nessun cantiere disponibile per la modifica');
+            return;
+        }
+        
+        const cantiereNames = this.cantieri.map(c => `${c.nome} (${c.tipo})`).join('\n');
+        const cantiereName = prompt(`Quale cantiere vuoi modificare?\n\n${cantiereNames}\n\nInserisci il nome esatto:`);
+        
+        if (cantiereName) {
+            const cantiere = this.cantieri.find(c => c.nome === cantiereName);
+            if (cantiere) {
+                this.editCantiere(cantiere.id);
+            } else {
+                alert('❌ Cantiere non trovato');
+            }
+        }
+    }
+
+    showDeleteCantiereMenu() {
+        if (this.cantieri.length === 0) {
+            alert('⚠️ Nessun cantiere disponibile per l\'eliminazione');
+            return;
+        }
+        
+        const cantiereNames = this.cantieri.map(c => `${c.nome} (${c.tipo})`).join('\n');
+        const cantiereName = prompt(`Quale cantiere vuoi eliminare?\n\n${cantiereNames}\n\nInserisci il nome esatto:`);
+        
+        if (cantiereName) {
+            const cantiere = this.cantieri.find(c => c.nome === cantiereName);
+            if (cantiere) {
+                this.removeCantiere(cantiere.id);
+            } else {
+                alert('❌ Cantiere non trovato');
+            }
+        }
+    }
+
+    openSettings() {
+        document.getElementById('modal-settings').classList.remove('hidden');
+        this.showSettingsTab('email');
+    }
+
+    openGeneralSettings() {
+        document.getElementById('modal-settings').classList.remove('hidden');
+        this.showSettingsTab('general');
+    }
+
+    showSettingsTab(tabName) {
+        // Nascondi tutti i tab
+        document.querySelectorAll('.tab-content').forEach(tab => {
+            tab.classList.add('hidden');
+        });
+        
+        // Rimuovi classe active da tutti i tab
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        
+        // Mostra il tab selezionato
+        document.getElementById(`settings-${tabName}`).classList.remove('hidden');
+        
+        // Aggiungi classe active al tab cliccato
+        document.querySelector(`.tab[data-tab="${tabName}"]`).classList.add('active');
+    }
+
+    closeSettings() {
+        document.getElementById('modal-settings').classList.add('hidden');
+    }
+
+    // ===== FUNZIONI UTILITY =====
+    closeModal() {
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.classList.add('hidden');
+        });
+    }
+
+    closeCantiereModal() {
+        document.getElementById('modal-cantiere-details').classList.add('hidden');
+        this.currentCantiereId = null;
+    }
+}
+
+// Inizializza l'app quando il DOM è pronto
+document.addEventListener('DOMContentLoaded', () => {
+    window.app = new SseManager();
+});
