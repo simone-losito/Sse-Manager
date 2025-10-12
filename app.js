@@ -33,6 +33,7 @@ class SseManager {
         this.currentYear = new Date().getFullYear();
         this.autoSaveEnabled = true;
         
+        // Variabili per drag & drop migliorato
         this.dragOffsetX = 0;
         this.dragOffsetY = 0;
 
@@ -115,7 +116,7 @@ class SseManager {
             this.saveUser();
         });
 
-        // Settings tabs
+        // Settings
         document.querySelectorAll('.tab').forEach(tab => {
             tab.addEventListener('click', (e) => {
                 const tabName = e.target.dataset.tab;
@@ -123,28 +124,23 @@ class SseManager {
             });
         });
 
-        // Settings buttons
         document.getElementById('save-email')?.addEventListener('click', () => this.saveEmailSettings());
         document.getElementById('save-general')?.addEventListener('click', () => this.saveGeneralSettings());
         document.getElementById('test-email')?.addEventListener('click', () => this.testEmailConnection());
         document.getElementById('reset-email')?.addEventListener('click', () => this.resetEmailSettings());
         document.getElementById('reset-general')?.addEventListener('click', () => this.resetGeneralSettings());
 
+        // Export/Import
+        document.getElementById('export-data')?.addEventListener('click', () => this.exportAllData());
+        document.getElementById('import-data')?.addEventListener('click', () => this.importData());
+
         // Drag & Drop globale
         document.addEventListener('dragover', (e) => {
             e.preventDefault();
-            if (this.draggedOperaio || this.draggedCantiere) {
-                e.dataTransfer.dropEffect = 'move';
-            }
+            e.dataTransfer.dropEffect = 'move';
         });
         
-        document.addEventListener('drop', (e) => {
-            e.preventDefault();
-            if (this.draggedOperaio && !e.target.closest('.cantiere')) {
-                this.unassignOperaioFromAnyCantiere(this.draggedOperaio);
-                this.draggedOperaio = null;
-            }
-        });
+        document.addEventListener('drop', (e) => e.preventDefault());
 
         window.addEventListener('beforeunload', () => this.saveAllData());
     }
@@ -310,6 +306,7 @@ class SseManager {
         document.getElementById('assigned-operai').textContent = assignedOperai;
         document.getElementById('total-cantieri').textContent = totalCantieri;
         
+        // Aggiorna anche le info nel modal info
         document.getElementById('info-total-operai').textContent = totalOperai;
         document.getElementById('info-assigned-operai').textContent = assignedOperai;
         document.getElementById('info-total-cantieri').textContent = totalCantieri;
@@ -324,6 +321,7 @@ class SseManager {
         
         container.innerHTML = '';
         
+        // Controlli solo per manager e master
         if (this.currentUser.type === 'manager' || this.currentUser.type === 'master') {
             controls.innerHTML = '<button class="btn btn-primary" onclick="app.addOperaio()">➕ Aggiungi Operaio</button>';
         } else {
@@ -338,6 +336,7 @@ class SseManager {
             card.draggable = (this.currentUser.type === 'manager' || this.currentUser.type === 'master') && this.isDragDropActive;
             card.dataset.operaioId = operaio.id;
             
+            // Setup drag events
             if ((this.currentUser.type === 'manager' || this.currentUser.type === 'master') && this.isDragDropActive) {
                 card.addEventListener('dragstart', (e) => {
                     this.draggedOperaio = operaio.id;
@@ -495,7 +494,7 @@ class SseManager {
         }
     }
 
-    // ===== GESTIONE CANTIERI =====
+    // ===== GESTIONE CANTIERI - VERSIONE CORRETTA CON DRAG & DROP =====
     renderCantieri() {
         const container = document.getElementById('map-container');
         const controls = document.getElementById('controls-cantieri');
@@ -524,15 +523,30 @@ class SseManager {
             element.style.top = cantiere.y + 'px';
             element.draggable = (this.currentUser.type === 'manager' || this.currentUser.type === 'master') && this.isDragDropActive;
             
+            // Setup drag per cantiere - VERSIONE CORRETTA
             if ((this.currentUser.type === 'manager' || this.currentUser.type === 'master') && this.isDragDropActive) {
                 element.addEventListener('dragstart', (e) => {
                     this.draggedCantiere = cantiere;
                     e.dataTransfer.setData('text/plain', 'cantiere-' + cantiere.id);
                     element.classList.add('dragging');
                     
+                    // Imposta l'offset per un drag più preciso
                     const rect = element.getBoundingClientRect();
                     this.dragOffsetX = e.clientX - rect.left;
                     this.dragOffsetY = e.clientY - rect.top;
+                });
+                
+                element.addEventListener('drag', (e) => {
+                    if (this.draggedCantiere && e.clientX !== 0 && e.clientY !== 0) {
+                        // Aggiorna posizione durante il drag (opzionale, per feedback visivo)
+                        const containerRect = container.getBoundingClientRect();
+                        const newX = e.clientX - containerRect.left - this.dragOffsetX;
+                        const newY = e.clientY - containerRect.top - this.dragOffsetY;
+                        
+                        // Limita ai confini del container
+                        element.style.left = Math.max(0, Math.min(containerRect.width - 160, newX)) + 'px';
+                        element.style.top = Math.max(0, Math.min(containerRect.height - 120, newY)) + 'px';
+                    }
                 });
                 
                 element.addEventListener('dragend', (e) => {
@@ -542,9 +556,11 @@ class SseManager {
                         const containerRect = container.getBoundingClientRect();
                         const elementRect = element.getBoundingClientRect();
                         
+                        // Calcola la posizione finale relativa al container
                         const finalX = elementRect.left - containerRect.left;
                         const finalY = elementRect.top - containerRect.top;
                         
+                        // Aggiorna la posizione nel modello dati
                         this.draggedCantiere.x = finalX;
                         this.draggedCantiere.y = finalY;
                         
@@ -552,9 +568,12 @@ class SseManager {
                     }
                     
                     this.draggedCantiere = null;
+                    this.dragOffsetX = 0;
+                    this.dragOffsetY = 0;
                 });
             }
 
+            // Setup drop per operai - VERSIONE CORRETTA
             element.addEventListener('dragover', (e) => {
                 e.preventDefault();
                 if (this.draggedOperaio && this.isDragDropActive) {
@@ -569,17 +588,19 @@ class SseManager {
             
             element.addEventListener('drop', (e) => {
                 e.preventDefault();
+                e.stopPropagation(); // IMPORTANTE: previene la propagazione all'evento drop del container
                 element.classList.remove('drag-over');
                 
                 if (this.draggedOperaio && this.isDragDropActive) {
                     this.assignOperaioToCantiere(this.draggedOperaio, cantiere.id);
                     this.showDragSuccess(cantiere);
-                    this.draggedOperaio = null;
+                    this.draggedOperaio = null; // Reset dopo l'assegnazione
                 }
             });
 
+            // Click per dettagli
             element.addEventListener('click', (e) => {
-                if (!this.draggedOperaio && !e.target.closest('.cantiere-controls')) {
+                if (!this.draggedOperaio && !e.target.closest('.cantiere-controls') && !this.draggedCantiere) {
                     this.showCantiereDetails(cantiere.id);
                 }
             });
@@ -604,6 +625,7 @@ class SseManager {
             container.appendChild(element);
         });
 
+        // Aggiungi event listener per il drop sul container (per rimuovere operai dai cantieri)
         container.addEventListener('dragover', (e) => {
             e.preventDefault();
             if (this.draggedOperaio && this.isDragDropActive) {
@@ -614,6 +636,19 @@ class SseManager {
 
         container.addEventListener('dragleave', (e) => {
             container.classList.remove('drag-over');
+        });
+
+        container.addEventListener('drop', (e) => {
+            e.preventDefault();
+            container.classList.remove('drag-over');
+            
+            // IMPORTANTE: Controlla se il drop è avvenuto direttamente sul container (non su un cantiere)
+            const cantiereElement = e.target.closest('.cantiere');
+            if (!cantiereElement && this.draggedOperaio && this.isDragDropActive) {
+                // Solo se droppato sul container (non su un cantiere), rimuovi dal cantiere
+                this.unassignOperaioFromAnyCantiere(this.draggedOperaio);
+                this.draggedOperaio = null; // Reset dopo la rimozione
+            }
         });
     }
 
@@ -640,6 +675,7 @@ class SseManager {
         }, 2000);
     }
 
+    // Nuova funzione per rimuovere operai dai cantieri
     unassignOperaioFromAnyCantiere(operaioId) {
         const operaio = this.operai.find(o => o.id === operaioId);
         if (!operaio || !operaio.cantiere) return;
@@ -653,6 +689,7 @@ class SseManager {
         this.renderApp();
         this.saveAllData();
         
+        // Mostra feedback
         const successMsg = document.createElement('div');
         successMsg.style.cssText = `
             position: fixed;
@@ -768,6 +805,7 @@ class SseManager {
         const cantiere = this.cantieri.find(c => c.id === cantiereId);
         if (!operaio || !cantiere) return;
         
+        // Rimuovi da cantiere precedente
         if (operaio.cantiere) {
             const oldCantiere = this.cantieri.find(c => c.id === operaio.cantiere);
             if (oldCantiere) {
@@ -775,6 +813,7 @@ class SseManager {
             }
         }
         
+        // Assegna al nuovo cantiere
         operaio.cantiere = cantiereId;
         if (!cantiere.operai.includes(operaioId)) {
             cantiere.operai.push(operaioId);
@@ -787,6 +826,7 @@ class SseManager {
     toggleDragDrop() {
         this.isDragDropActive = !this.isDragDropActive;
         
+        // Aggiorna lo stato draggable di tutti gli elementi
         document.querySelectorAll('.cantiere').forEach(cantiere => {
             cantiere.draggable = (this.currentUser.type === 'manager' || this.currentUser.type === 'master') && this.isDragDropActive;
         });
@@ -846,6 +886,7 @@ class SseManager {
         document.getElementById('time-start').value = cantiere.timeSlot?.start || '08:00';
         document.getElementById('time-end').value = cantiere.timeSlot?.end || '17:00';
         
+        // Aggiorna time slot in tempo reale
         document.getElementById('time-start').onchange = (e) => {
             cantiere.timeSlot.start = e.target.value;
             this.saveAllData();
@@ -977,6 +1018,7 @@ class SseManager {
         setTimeout(() => {
             const giorni = selectedDates.map(date => new Date(date).toLocaleDateString('it-IT')).join(', ');
             
+            // Simulazione invio email
             operaiAssegnati.forEach(operaio => {
                 console.log(`📧 Email inviata a ${operaio.email}: Partecipazione cantiere ${cantiere.nome} per i giorni ${giorni}`);
             });
@@ -1023,6 +1065,7 @@ class SseManager {
         document.getElementById('form-user').reset();
         document.getElementById('user-id').value = '';
         
+        // Popola dropdown operai
         const operaioSelect = document.getElementById('user-operaio');
         operaioSelect.innerHTML = '<option value="">Nessuna associazione</option>';
         this.operai.forEach(operaio => {
@@ -1045,6 +1088,7 @@ class SseManager {
         document.getElementById('user-password').value = user.password;
         document.getElementById('user-type').value = user.type;
         
+        // Popola dropdown operai
         const operaioSelect = document.getElementById('user-operaio');
         operaioSelect.innerHTML = '<option value="">Nessuna associazione</option>';
         this.operai.forEach(operaio => {
@@ -1141,37 +1185,48 @@ class SseManager {
 
     importOperaiCSV() {
         alert('📥 Funzionalità di importazione CSV in sviluppo');
+        // Implementazione futura per importare operai da CSV
     }
 
     // ===== IMPOSTAZIONI =====
     showSettings(activeTab = 'email') {
         this.showModal('modal-settings');
-        this.switchSettingsTab(activeTab);
+        
+        // Attiva tab specificato
+        if (activeTab) {
+            this.switchSettingsTab(activeTab);
+        }
     }
 
     switchSettingsTab(tabName) {
+        // Nascondi tutti i tab content
         document.querySelectorAll('.tab-content').forEach(tab => {
             tab.classList.add('hidden');
         });
         
+        // Rimuovi active da tutti i tab
         document.querySelectorAll('.tab').forEach(tab => {
             tab.classList.remove('active');
         });
         
+        // Mostra tab selezionato
         document.getElementById('settings-' + tabName)?.classList.remove('hidden');
         document.querySelector(`[data-tab="${tabName}"]`)?.classList.add('active');
     }
 
     saveEmailSettings() {
         alert('✅ Impostazioni email salvate (demo)');
+        // Implementazione futura per salvare impostazioni email reali
     }
 
     saveGeneralSettings() {
         alert('✅ Impostazioni generali salvate (demo)');
+        // Implementazione futura per salvare impostazioni generali reali
     }
 
     testEmailConnection() {
         alert('🔧 Test connessione email eseguito (demo)');
+        // Implementazione futura per test reale connessione email
     }
 
     resetEmailSettings() {
@@ -1222,6 +1277,7 @@ class SseManager {
 
     importData() {
         alert('📂 Funzionalità di importazione dati in sviluppo');
+        // Implementazione futura per importare dati da file JSON
     }
 
     // ===== FUNZIONALITÀ AGGIUNTIVE MENU =====
@@ -1252,7 +1308,7 @@ class SseManager {
         if (this.autoSaveEnabled) {
             setInterval(() => {
                 this.saveAllData();
-            }, 30000);
+            }, 30000); // Salva ogni 30 secondi
         }
     }
 
@@ -1293,28 +1349,6 @@ style.textContent = `
     
     .current-user-master .master-only {
         display: block !important;
-    }
-    
-    .user-type-badge {
-        padding: 4px 8px;
-        border-radius: 6px;
-        font-size: 11px;
-        font-weight: 600;
-    }
-    
-    .user-type-badge.master {
-        background: rgba(230, 129, 97, 0.1);
-        color: #e68161;
-    }
-    
-    .user-type-badge.manager {
-        background: rgba(33, 128, 141, 0.1);
-        color: #21808d;
-    }
-    
-    .user-type-badge.operaio {
-        background: rgba(34, 197, 94, 0.1);
-        color: #22c55e;
     }
 `;
 document.head.appendChild(style);
