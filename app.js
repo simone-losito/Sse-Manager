@@ -1,9 +1,9 @@
-// app.js - Sse Manager Ver 1.4
-console.log('🏗️ Sse Manager - Caricamento Ver 1.4...');
+// app.js - Sse Manager Ver 1.5
+console.log('🏗️ Sse Manager - Caricamento Ver 1.5...');
 
 class SseManager {
     constructor() {
-        this.operai = [
+        this.operai = this.loadData('operai') || [
             {id: 1, nome: "Marco Rossi", email: "marco.rossi@standardse.it", telefono: "333-1234567", specializzazione: "Elettricista", livello: 5, cantiere: 1, avatar: "⚡", preposto: true},
             {id: 2, nome: "Giuseppe Bianchi", email: "giuseppe.bianchi@standardse.it", telefono: "335-2345678", specializzazione: "Meccanico", livello: 4, cantiere: 1, avatar: "🔧", preposto: false},
             {id: 3, nome: "Antonio Verde", email: "antonio.verde@standardse.it", telefono: "338-3456789", specializzazione: "Elettricista", livello: 3, cantiere: 2, avatar: "⚡", preposto: false},
@@ -12,7 +12,7 @@ class SseManager {
             {id: 6, nome: "Salvatore Blu", email: "salvatore.blu@standardse.it", telefono: "346-6789012", specializzazione: "Meccanico", livello: 3, cantiere: null, avatar: "🔧", preposto: false}
         ];
 
-        this.cantieri = [
+        this.cantieri = this.loadData('cantieri') || [
             {id: 1, nome: "Palazzo Roma Centro", indirizzo: "Via Roma 123, Roma", tipo: "Civile", x: 150, y: 200, operai: [1, 2], calendarSelections: {}, timeSlot: {start: "08:00", end: "17:00"}},
             {id: 2, nome: "Impianto Industriale Ostia", indirizzo: "Via del Mare 45, Ostia", tipo: "Industriale", x: 400, y: 300, operai: [4, 3], calendarSelections: {}, timeSlot: {start: "07:00", end: "16:00"}},
             {id: 3, nome: "Ristrutturazione Trastevere", indirizzo: "Viale Trastevere 78, Roma", tipo: "Residenziale", x: 300, y: 150, operai: [], calendarSelections: {}, timeSlot: {start: "08:30", end: "17:30"}}
@@ -24,14 +24,16 @@ class SseManager {
         this.currentCantiereId = null;
         this.currentMonth = new Date().getMonth();
         this.currentYear = new Date().getFullYear();
+        this.autoSaveEnabled = true;
 
         this.init();
     }
 
     init() {
-        console.log('🚀 Inizializzazione Sse Manager Ver 1.4');
+        console.log('🚀 Inizializzazione Sse Manager Ver 1.5');
         this.setupEventListeners();
         this.updateStats();
+        this.setupAutoSave();
         console.log('✅ App inizializzata correttamente');
     }
 
@@ -114,6 +116,11 @@ class SseManager {
             this.closeSettings();
         });
 
+        // Info modal
+        document.getElementById('close-info').addEventListener('click', () => {
+            this.closeInfo();
+        });
+
         document.querySelectorAll('.tab').forEach(tab => {
             tab.addEventListener('click', (e) => {
                 this.showSettingsTab(e.target.dataset.tab);
@@ -130,6 +137,11 @@ class SseManager {
                 this.closeMenu();
             }
         });
+
+        // Salva dati prima di chiudere la pagina
+        window.addEventListener('beforeunload', () => {
+            this.saveAllData();
+        });
     }
 
     handleMenuAction(action) {
@@ -140,8 +152,11 @@ class SseManager {
             'show-cantieri-list': () => this.showCantieriList(),
             'show-modify-cantiere': () => this.showModifyCantiereMenu(),
             'show-delete-cantiere': () => this.showDeleteCantiereMenu(),
+            'export-data': () => this.exportData(),
+            'import-data': () => this.importData(),
             'open-settings': () => this.openSettings(),
             'open-general-settings': () => this.openGeneralSettings(),
+            'show-info': () => this.showInfo(),
             'logout': () => this.logout()
         };
 
@@ -149,6 +164,128 @@ class SseManager {
             actions[action]();
             this.closeMenu();
         }
+    }
+
+    // ===== SISTEMA SALVATAGGIO DATI =====
+    setupAutoSave() {
+        // Salva automaticamente ogni 30 secondi
+        setInterval(() => {
+            if (this.autoSaveEnabled) {
+                this.saveAllData();
+            }
+        }, 30000);
+    }
+
+    saveAllData() {
+        this.saveData('operai', this.operai);
+        this.saveData('cantieri', this.cantieri);
+        this.showAutoSaveIndicator();
+    }
+
+    saveData(key, data) {
+        try {
+            localStorage.setItem(`sse_manager_${key}`, JSON.stringify(data));
+            return true;
+        } catch (error) {
+            console.error('Errore nel salvataggio dati:', error);
+            return false;
+        }
+    }
+
+    loadData(key) {
+        try {
+            const data = localStorage.getItem(`sse_manager_${key}`);
+            return data ? JSON.parse(data) : null;
+        } catch (error) {
+            console.error('Errore nel caricamento dati:', error);
+            return null;
+        }
+    }
+
+    showAutoSaveIndicator() {
+        const indicator = document.createElement('div');
+        indicator.className = 'auto-save-indicator';
+        indicator.textContent = '💾 Dati salvati';
+        document.body.appendChild(indicator);
+        
+        setTimeout(() => {
+            indicator.remove();
+        }, 2000);
+    }
+
+    // ===== IMPORT/EXPORT DATI =====
+    exportData() {
+        const data = {
+            operai: this.operai,
+            cantieri: this.cantieri,
+            exportDate: new Date().toISOString(),
+            version: '1.5'
+        };
+
+        const dataStr = JSON.stringify(data, null, 2);
+        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+        
+        const url = URL.createObjectURL(dataBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `sse_manager_backup_${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+        alert('✅ Dati esportati con successo!');
+    }
+
+    importData() {
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = '.json';
+        
+        fileInput.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const data = JSON.parse(event.target.result);
+                    
+                    // Validazione dati
+                    if (!data.operai || !data.cantieri) {
+                        throw new Error('File non valido: struttura dati mancante');
+                    }
+                    
+                    if (confirm(`Importare ${data.operai.length} operai e ${data.cantieri.length} cantieri? I dati attuali verranno sovrascritti.`)) {
+                        this.operai = data.operai;
+                        this.cantieri = data.cantieri;
+                        this.saveAllData();
+                        this.renderApp();
+                        alert('✅ Dati importati con successo!');
+                    }
+                } catch (error) {
+                    alert('❌ Errore nell\'importazione: ' + error.message);
+                }
+            };
+            
+            reader.readAsText(file);
+        };
+        
+        fileInput.click();
+    }
+
+    // ===== INFORMAZIONI SISTEMA =====
+    showInfo() {
+        // Aggiorna le statistiche nel modal info
+        document.getElementById('info-total-operai').textContent = this.operai.length;
+        document.getElementById('info-assigned-operai').textContent = this.operai.filter(o => o.cantiere !== null).length;
+        document.getElementById('info-total-cantieri').textContent = this.cantieri.length;
+        
+        document.getElementById('modal-info').classList.remove('hidden');
+    }
+
+    closeInfo() {
+        document.getElementById('modal-info').classList.add('hidden');
     }
 
     // ===== FUNZIONI PRINCIPALI =====
@@ -162,6 +299,8 @@ class SseManager {
 
     logout() {
         console.log('👋 LOGOUT');
+        // Salva prima di uscire
+        this.saveAllData();
         document.getElementById('main-app').classList.add('hidden');
         document.getElementById('login-screen').classList.remove('hidden');
         this.closeMenu();
@@ -350,6 +489,7 @@ class SseManager {
         
         this.closeModal();
         this.renderApp();
+        this.saveAllData();
     }
 
     removeOperaio(operaioId) {
@@ -374,6 +514,7 @@ class SseManager {
             
             // AGGIORNAMENTO IMMEDIATO - anche se il modal dettagli è aperto
             this.renderApp();
+            this.saveAllData();
             
             // Se il modal dettagli cantiere è aperto, aggiorna anche quello
             if (this.currentCantiereId) {
@@ -517,6 +658,9 @@ class SseManager {
                 // Aggiorna la posizione CSS
                 element.style.left = this.draggedCantiere.x + 'px';
                 element.style.top = this.draggedCantiere.y + 'px';
+                
+                // Salva la nuova posizione
+                this.saveAllData();
             }
             
             setTimeout(() => {
@@ -651,6 +795,7 @@ class SseManager {
         
         this.closeModal();
         this.renderCantieri();
+        this.saveAllData();
     }
 
     removeCantiere(cantiereId) {
@@ -669,6 +814,7 @@ class SseManager {
             if (index !== -1) this.cantieri.splice(index, 1);
             
             this.renderApp();
+            this.saveAllData();
         }
     }
 
@@ -693,6 +839,7 @@ class SseManager {
         }
         
         this.renderApp();
+        this.saveAllData();
     }
 
     unassignOperaio(operaioId, cantiereId) {
@@ -706,6 +853,7 @@ class SseManager {
         
         // AGGIORNAMENTO IMMEDIATO - rigenera l'intera UI
         this.renderApp();
+        this.saveAllData();
         
         // Se il modal dettagli è aperto, aggiorna anche quello
         if (this.currentCantiereId === cantiereId) {
@@ -839,6 +987,7 @@ class SseManager {
         const dateKey = dateStr.split('T')[0];
         cantiere.calendarSelections[dateKey] = !cantiere.calendarSelections[dateKey];
         this.renderCalendar();
+        this.saveAllData();
     }
 
     changeMonth(direction) {

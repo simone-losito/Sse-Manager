@@ -11,7 +11,7 @@
     <div id="login-screen" class="login-screen">
         <div class="login-container">
             <h1>🏗️ Sse Manager</h1>
-            <p class="subtitle">Sviluppato e pensato da Simone Losito</p>
+            <p class="subtitle">Powered by Simoncino</p>
             <button id="login-btn" class="btn btn-primary">🚀 Entra come Manager</button>
         </div>
     </div>
@@ -42,8 +42,13 @@
                         <div class="menu-item" data-action="show-modify-cantiere">✏️ Modifica Cantiere</div>
                         <div class="menu-item" data-action="show-delete-cantiere">🗑️ Elimina Cantiere</div>
                         <div class="menu-separator"></div>
+                        <div class="menu-item" data-action="export-data">💾 Esporta Dati</div>
+                        <div class="menu-item" data-action="import-data">📂 Importa Dati</div>
+                        <div class="menu-separator"></div>
                         <div class="menu-item" data-action="open-settings">📧 Impostazioni Email</div>
                         <div class="menu-item" data-action="open-general-settings">⚙️ Impostazioni Generali</div>
+                        <div class="menu-separator"></div>
+                        <div class="menu-item" data-action="show-info">ℹ️ Informazioni</div>
                         <div class="menu-separator"></div>
                         <div class="menu-item" data-action="logout">🚪 Logout</div>
                     </div>
@@ -351,6 +356,45 @@
 
             <div class="modal-actions">
                 <button id="close-settings" class="btn btn-primary">✅ Chiudi</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL INFORMAZIONI -->
+    <div id="modal-info" class="modal hidden">
+        <div class="modal-content">
+            <h3>ℹ️ Informazioni Sistema</h3>
+            
+            <div class="info-content">
+                <div class="info-section">
+                    <h4>🏗️ Sse Manager</h4>
+                    <p><strong>Versione:</strong> 1.5</p>
+                    <p><strong>Creato da:</strong> Simone Losito</p>
+                    <p><strong>Powered by:</strong> Simoncino</p>
+                </div>
+                
+                <div class="info-section">
+                    <h4>📊 Statistiche Correnti</h4>
+                    <p><strong>Operai Totali:</strong> <span id="info-total-operai">0</span></p>
+                    <p><strong>Operai Assegnati:</strong> <span id="info-assigned-operai">0</span></p>
+                    <p><strong>Cantieri Attivi:</strong> <span id="info-total-cantieri">0</span></p>
+                </div>
+                
+                <div class="info-section">
+                    <h4>💡 Caratteristiche</h4>
+                    <ul>
+                        <li>Gestione completa operai e cantieri</li>
+                        <li>Drag & Drop assegnazioni</li>
+                        <li>Calendario interattivo</li>
+                        <li>Sistema email integrato</li>
+                        <li>Import/Export dati</li>
+                        <li>Design responsive</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button id="close-info" class="btn btn-primary">✅ Chiudi</button>
             </div>
         </div>
     </div>

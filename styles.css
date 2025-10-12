@@ -1,4 +1,4 @@
-/* styles.css - Sse Manager Ver 1.4 */
+/* styles.css - Sse Manager Ver 1.5 */
 :root {
   /* Primitive Color Tokens */
   --color-white: rgba(255, 255, 255, 1);
@@ -1604,5 +1604,167 @@ select.form-control {
     
     .map-area {
         display: none;
+    }
+}
+
+/* ===== MODIFICHE VER 1.5 ===== */
+
+/* Info Modal */
+.info-content {
+    margin: var(--space-20) 0;
+}
+
+.info-section {
+    margin-bottom: var(--space-24);
+    padding: var(--space-16);
+    background: rgba(var(--color-success-rgb), 0.05);
+    border-radius: var(--radius-base);
+    border: 1px solid var(--color-border);
+}
+
+.info-section h4 {
+    color: var(--color-primary);
+    margin-bottom: var(--space-12);
+    font-size: var(--font-size-lg);
+}
+
+.info-section p {
+    margin-bottom: var(--space-8);
+    color: var(--color-text);
+}
+
+.info-section ul {
+    margin-left: var(--space-20);
+    color: var(--color-text);
+}
+
+.info-section li {
+    margin-bottom: var(--space-4);
+}
+
+/* Import/Export Section */
+.import-export-section {
+    margin: var(--space-20) 0;
+    padding: var(--space-20);
+    background: rgba(var(--color-primary-rgb), 0.05);
+    border-radius: var(--radius-base);
+    border: 2px dashed var(--color-primary);
+}
+
+.import-export-section h4 {
+    color: var(--color-primary);
+    margin-bottom: var(--space-16);
+    text-align: center;
+}
+
+.import-export-actions {
+    display: flex;
+    gap: var(--space-12);
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.btn-export {
+    background: var(--color-success);
+    color: var(--color-btn-primary-text);
+}
+
+.btn-import {
+    background: var(--color-warning);
+    color: var(--color-btn-primary-text);
+}
+
+.btn-export:hover:not(:disabled) {
+    background: var(--color-primary-hover);
+    transform: translateY(-2px);
+}
+
+.btn-import:hover:not(:disabled) {
+    background: var(--color-warning);
+    opacity: 0.9;
+    transform: translateY(-2px);
+}
+
+/* File Input Styling */
+.file-input-container {
+    position: relative;
+    margin: var(--space-16) 0;
+}
+
+.file-input {
+    position: absolute;
+    opacity: 0;
+    width: 0.1px;
+    height: 0.1px;
+}
+
+.file-input-label {
+    display: block;
+    padding: var(--space-12) var(--space-16);
+    background: var(--color-secondary);
+    color: var(--color-text);
+    border: 2px dashed var(--color-border);
+    border-radius: var(--radius-base);
+    text-align: center;
+    cursor: pointer;
+    transition: all var(--duration-fast) var(--ease-standard);
+}
+
+.file-input-label:hover {
+    background: var(--color-secondary-hover);
+    border-color: var(--color-primary);
+}
+
+.file-input-label.has-file {
+    background: rgba(var(--color-success-rgb), 0.1);
+    border-color: var(--color-success);
+    color: var(--color-success);
+}
+
+/* Success Messages */
+.import-success {
+    background: rgba(var(--color-success-rgb), 0.1);
+    border: 1px solid var(--color-success);
+    color: var(--color-success);
+    padding: var(--space-12);
+    border-radius: var(--radius-base);
+    margin: var(--space-16) 0;
+    text-align: center;
+}
+
+.import-error {
+    background: rgba(var(--color-error-rgb), 0.1);
+    border: 1px solid var(--color-error);
+    color: var(--color-error);
+    padding: var(--space-12);
+    border-radius: var(--radius-base);
+    margin: var(--space-16) 0;
+    text-align: center;
+}
+
+/* Auto-save indicator */
+.auto-save-indicator {
+    position: fixed;
+    bottom: var(--space-16);
+    right: var(--space-16);
+    background: var(--color-success);
+    color: var(--color-btn-primary-text);
+    padding: var(--space-8) var(--space-12);
+    border-radius: var(--radius-base);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    z-index: 1000;
+    animation: slideUp 0.3s var(--ease-standard);
+    box-shadow: var(--shadow-md);
+}
+
+/* Responsive improvements for info modal */
+@media (max-width: 768px) {
+    .import-export-actions {
+        flex-direction: column;
+    }
+    
+    .info-section {
+        padding: var(--space-12);
     }
 }
