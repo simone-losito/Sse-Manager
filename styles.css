@@ -2045,3 +2045,63 @@ select.form-control {
     80% { opacity: 1; transform: translateY(0); }
     100% { opacity: 0; transform: translateY(-10px); }
 }
+
+/* ===== CORREZIONI MOBILE URGENTI ===== */
+@media (max-width: 768px) {
+    .main-content {
+        flex-direction: column !important;
+        height: auto !important;
+    }
+    
+    .sidebar {
+        width: 100% !important;
+        max-height: 40vh !important;
+        min-height: 200px !important;
+    }
+    
+    .map-area {
+        height: 50vh !important;
+        min-height: 300px !important;
+    }
+    
+    .map-container {
+        height: 100% !important;
+    }
+    
+    .header {
+        padding: 10px !important;
+    }
+    
+    .header-left h1 {
+        font-size: 1.2rem !important;
+    }
+}
+
+/* ===== MIGLIORAMENTI DRAG & DROP ===== */
+.cantiere.dragging {
+    opacity: 0.8;
+    cursor: grabbing !important;
+    transform: rotate(5deg) scale(1.05);
+    z-index: 1000;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+}
+
+.map-container.drag-over {
+    background: rgba(33, 128, 141, 0.05) !important;
+    border: 2px dashed var(--color-primary) !important;
+}
+
+/* ===== FIX VISUALIZZAZIONE ===== */
+.master-only {
+    display: none;
+}
+
+.current-user-master .master-only {
+    display: block;
+}
+
+/* ===== MIGLIORAMENTI PERFORMANCE ===== */
+.operaio-card, .cantiere {
+    will-change: transform;
+    transform: translateZ(0);
+}

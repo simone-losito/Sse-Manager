@@ -116,6 +116,24 @@ class SseManager {
             this.saveUser();
         });
 
+        // Settings
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                const tabName = e.target.dataset.tab;
+                this.switchSettingsTab(tabName);
+            });
+        });
+
+        document.getElementById('save-email')?.addEventListener('click', () => this.saveEmailSettings());
+        document.getElementById('save-general')?.addEventListener('click', () => this.saveGeneralSettings());
+        document.getElementById('test-email')?.addEventListener('click', () => this.testEmailConnection());
+        document.getElementById('reset-email')?.addEventListener('click', () => this.resetEmailSettings());
+        document.getElementById('reset-general')?.addEventListener('click', () => this.resetGeneralSettings());
+
+        // Export/Import
+        document.getElementById('export-data')?.addEventListener('click', () => this.exportAllData());
+        document.getElementById('import-data')?.addEventListener('click', () => this.importData());
+
         // Drag & Drop globale
         document.addEventListener('dragover', (e) => {
             e.preventDefault();
@@ -154,6 +172,27 @@ class SseManager {
                 break;
             case 'export-operai':
                 this.exportOperaiCSV();
+                break;
+            case 'import-operai':
+                this.importOperaiCSV();
+                break;
+            case 'show-operai-list':
+                this.showOperaiList();
+                break;
+            case 'show-cantieri-list':
+                this.showCantieriList();
+                break;
+            case 'show-modify-cantiere':
+                this.showModifyCantiere();
+                break;
+            case 'show-delete-cantiere':
+                this.showDeleteCantiere();
+                break;
+            case 'export-data':
+                this.exportAllData();
+                break;
+            case 'import-data':
+                this.importData();
                 break;
             default:
                 console.warn('Azione menu non gestita:', action);
@@ -225,15 +264,18 @@ class SseManager {
             modeText.textContent = 'Modalità: Master Administrator';
             userInfo.innerHTML = `<span class="user-badge master">👑 ${this.currentUser.username}</span>`;
             masterElements.forEach(el => el.style.display = 'block');
+            document.body.classList.add('current-user-master');
         } else if (this.currentUser.type === 'manager') {
             modeText.textContent = 'Modalità: Manager';
             userInfo.innerHTML = `<span class="user-badge manager">👔 ${this.currentUser.username}</span>`;
             masterElements.forEach(el => el.style.display = 'none');
+            document.body.classList.remove('current-user-master');
         } else {
             const operaio = this.operai.find(o => o.id === this.currentUser.operaioId);
             modeText.textContent = 'Modalità: Operaio';
             userInfo.innerHTML = `<span class="user-badge operaio">👷 ${operaio ? operaio.nome : this.currentUser.username}</span>`;
             masterElements.forEach(el => el.style.display = 'none');
+            document.body.classList.remove('current-user-master');
         }
     }
 
@@ -245,6 +287,7 @@ class SseManager {
         this.currentUser = null;
         document.getElementById('login-username').value = '';
         document.getElementById('login-password').value = '';
+        document.body.classList.remove('current-user-master');
     }
 
     // ===== RENDER APPLICAZIONE =====
@@ -1140,6 +1183,11 @@ class SseManager {
         alert('✅ File CSV esportato con successo!');
     }
 
+    importOperaiCSV() {
+        alert('📥 Funzionalità di importazione CSV in sviluppo');
+        // Implementazione futura per importare operai da CSV
+    }
+
     // ===== IMPOSTAZIONI =====
     showSettings(activeTab = 'email') {
         this.showModal('modal-settings');
@@ -1164,6 +1212,89 @@ class SseManager {
         // Mostra tab selezionato
         document.getElementById('settings-' + tabName)?.classList.remove('hidden');
         document.querySelector(`[data-tab="${tabName}"]`)?.classList.add('active');
+    }
+
+    saveEmailSettings() {
+        alert('✅ Impostazioni email salvate (demo)');
+        // Implementazione futura per salvare impostazioni email reali
+    }
+
+    saveGeneralSettings() {
+        alert('✅ Impostazioni generali salvate (demo)');
+        // Implementazione futura per salvare impostazioni generali reali
+    }
+
+    testEmailConnection() {
+        alert('🔧 Test connessione email eseguito (demo)');
+        // Implementazione futura per test reale connessione email
+    }
+
+    resetEmailSettings() {
+        if (confirm('Resettare le impostazioni email?')) {
+            document.getElementById('smtp-server').value = '';
+            document.getElementById('smtp-port').value = '587';
+            document.getElementById('sender-email').value = '';
+            document.getElementById('email-password').value = '';
+            document.getElementById('sender-name').value = 'Sistema Cantieri';
+            document.getElementById('email-subject').value = 'Convocazione Cantiere - {cantiere}';
+            document.getElementById('email-template').value = '';
+            alert('🔄 Impostazioni email resettate');
+        }
+    }
+
+    resetGeneralSettings() {
+        if (confirm('Resettare le impostazioni generali?')) {
+            document.getElementById('company-name').value = 'Standard System Engineering Srl';
+            document.getElementById('timezone').value = 'Europe/Rome';
+            document.getElementById('language').value = 'it';
+            document.getElementById('datetime-format').value = 'dd/mm/yyyy';
+            alert('🔄 Impostazioni generali resettate');
+        }
+    }
+
+    // ===== ESPORTAZIONE/IMPORTAZIONE DATI =====
+    exportAllData() {
+        const data = {
+            operai: this.operai,
+            cantieri: this.cantieri,
+            users: this.users,
+            exportDate: new Date().toISOString(),
+            version: '1.6.3'
+        };
+        
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `sse_manager_backup_${new Date().toISOString().split('T')[0]}.json`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        alert('✅ Backup dati esportato con successo!');
+    }
+
+    importData() {
+        alert('📂 Funzionalità di importazione dati in sviluppo');
+        // Implementazione futura per importare dati da file JSON
+    }
+
+    // ===== FUNZIONALITÀ AGGIUNTIVE MENU =====
+    showOperaiList() {
+        alert('👷 Funzionalità lista operai completa - Usa la sidebar per visualizzare gli operai');
+    }
+
+    showCantieriList() {
+        alert('🏗️ Funzionalità lista cantieri completa - Usa la mappa per visualizzare i cantieri');
+    }
+
+    showModifyCantiere() {
+        alert('✏️ Funzionalità modifica cantiere - Clicca sul pulsante di modifica di un cantiere sulla mappa');
+    }
+
+    showDeleteCantiere() {
+        alert('🗑️ Funzionalità elimina cantiere - Clicca sul pulsante di eliminazione di un cantiere sulla mappa');
     }
 
     // ===== INFORMAZIONI =====
@@ -1205,3 +1336,19 @@ class SseManager {
 
 // Inizializza l'applicazione
 const app = new SseManager();
+
+// Aggiungi stili per animazioni
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes fadeInOut {
+        0% { opacity: 0; transform: translateY(-10px); }
+        20% { opacity: 1; transform: translateY(0); }
+        80% { opacity: 1; transform: translateY(0); }
+        100% { opacity: 0; transform: translateY(-10px); }
+    }
+    
+    .current-user-master .master-only {
+        display: block !important;
+    }
+`;
+document.head.appendChild(style);
