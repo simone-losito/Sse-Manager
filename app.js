@@ -545,11 +545,13 @@ class SseManager {
             
             element.addEventListener('drop', (e) => {
                 e.preventDefault();
+                e.stopPropagation(); // IMPORTANTE: previene la propagazione all'evento drop del container
                 element.classList.remove('drag-over');
                 
                 if (this.draggedOperaio && this.isDragDropActive) {
                     this.assignOperaioToCantiere(this.draggedOperaio, cantiere.id);
                     this.showDragSuccess(cantiere);
+                    this.draggedOperaio = null; // Reset dopo l'assegnazione
                 }
             });
 
@@ -596,9 +598,13 @@ class SseManager {
         container.addEventListener('drop', (e) => {
             e.preventDefault();
             container.classList.remove('drag-over');
-            if (this.draggedOperaio && this.isDragDropActive) {
-                // Se droppato sul container (non su un cantiere), rimuovi dal cantiere
+            
+            // IMPORTANTE: Controlla se il drop è avvenuto direttamente sul container (non su un cantiere)
+            const cantiereElement = e.target.closest('.cantiere');
+            if (!cantiereElement && this.draggedOperaio && this.isDragDropActive) {
+                // Solo se droppato sul container (non su un cantiere), rimuovi dal cantiere
                 this.unassignOperaioFromAnyCantiere(this.draggedOperaio);
+                this.draggedOperaio = null; // Reset dopo la rimozione
             }
         });
     }
