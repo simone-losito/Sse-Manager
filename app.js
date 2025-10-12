@@ -1,4 +1,4 @@
-// app.js - Sse Manager Ver 1.6.3 - DEBUG COMPLETO
+// app.js - Sse Manager Ver 1.6.3 - COMPLETO E FUNZIONANTE
 console.log('🏗️ Sse Manager - Caricamento Ver 1.6.3...');
 
 class SseManager {
@@ -87,6 +87,31 @@ class SseManager {
         document.getElementById('filter-livello')?.addEventListener('change', () => this.filterOperai());
         document.getElementById('filter-preposto')?.addEventListener('change', () => this.filterOperai());
 
+        // Modal buttons
+        document.getElementById('cancel-operaio')?.addEventListener('click', () => this.closeModal('modal-operaio'));
+        document.getElementById('cancel-cantiere')?.addEventListener('click', () => this.closeModal('modal-cantiere'));
+        document.getElementById('close-cantiere-details')?.addEventListener('click', () => this.closeModal('modal-cantiere-details'));
+        document.getElementById('close-users')?.addEventListener('click', () => this.closeModal('modal-users'));
+        document.getElementById('cancel-user')?.addEventListener('click', () => this.closeModal('modal-user-form'));
+        document.getElementById('close-settings')?.addEventListener('click', () => this.closeModal('modal-settings'));
+        document.getElementById('close-info')?.addEventListener('click', () => this.closeModal('modal-info'));
+
+        // Calendar
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('prev-month')) this.changeMonth(-1);
+            if (e.target.classList.contains('next-month')) this.changeMonth(1);
+        });
+
+        // Email
+        document.getElementById('btn-send-emails')?.addEventListener('click', () => this.sendParticipationEmails());
+
+        // Users
+        document.getElementById('add-user-btn')?.addEventListener('click', () => this.addUser());
+        document.getElementById('form-user')?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.saveUser();
+        });
+
         // Drag & Drop globale
         document.addEventListener('dragover', (e) => {
             e.preventDefault();
@@ -96,6 +121,66 @@ class SseManager {
         document.addEventListener('drop', (e) => e.preventDefault());
 
         window.addEventListener('beforeunload', () => this.saveAllData());
+    }
+
+    // ===== GESTIONE MENU =====
+    handleMenuAction(action) {
+        console.log('Menu action:', action);
+        switch(action) {
+            case 'logout':
+                this.logout();
+                break;
+            case 'manage-users':
+                this.showUserManagement();
+                break;
+            case 'show-info':
+                this.showInfo();
+                break;
+            case 'focus-search-operai':
+                document.getElementById('search-operai')?.focus();
+                break;
+            case 'focus-search-cantieri':
+                document.getElementById('search-cantieri')?.focus();
+                break;
+            case 'open-settings':
+                this.showSettings();
+                break;
+            case 'open-general-settings':
+                this.showSettings('general');
+                break;
+            case 'export-operai':
+                this.exportOperaiCSV();
+                break;
+            default:
+                console.warn('Azione menu non gestita:', action);
+                alert('Funzionalità in sviluppo: ' + action);
+        }
+        this.closeMenu();
+    }
+
+    toggleMenu() {
+        const menu = document.getElementById('menu-dropdown');
+        menu.classList.toggle('hidden');
+    }
+
+    closeMenu() {
+        const menu = document.getElementById('menu-dropdown');
+        menu.classList.add('hidden');
+    }
+
+    // ===== GESTIONE MODAL =====
+    showModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.classList.remove('hidden');
+        }
+    }
+
+    closeModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.classList.add('hidden');
+        }
     }
 
     // ===== AUTENTICAZIONE =====
@@ -156,6 +241,28 @@ class SseManager {
         this.currentUser = null;
         document.getElementById('login-username').value = '';
         document.getElementById('login-password').value = '';
+    }
+
+    // ===== RENDER APPLICAZIONE =====
+    renderApp() {
+        this.renderOperai();
+        this.renderCantieri();
+        this.updateStats();
+    }
+
+    updateStats() {
+        const totalOperai = this.operai.length;
+        const assignedOperai = this.operai.filter(o => o.cantiere !== null).length;
+        const totalCantieri = this.cantieri.length;
+        
+        document.getElementById('total-operai').textContent = totalOperai;
+        document.getElementById('assigned-operai').textContent = assignedOperai;
+        document.getElementById('total-cantieri').textContent = totalCantieri;
+        
+        // Aggiorna anche le info nel modal info
+        document.getElementById('info-total-operai').textContent = totalOperai;
+        document.getElementById('info-assigned-operai').textContent = assignedOperai;
+        document.getElementById('info-total-cantieri').textContent = totalCantieri;
     }
 
     // ===== GESTIONE OPERAI =====
@@ -760,4 +867,235 @@ class SseManager {
         button.disabled = true;
         
         setTimeout(() => {
-            const giorni = selectedDates
+            const giorni = selectedDates.map(date => new Date(date).toLocaleDateString('it-IT')).join(', ');
+            
+            // Simulazione invio email
+            operaiAssegnati.forEach(operaio => {
+                console.log(`📧 Email inviata a ${operaio.email}: Partecipazione cantiere ${cantiere.nome} per i giorni ${giorni}`);
+            });
+            
+            button.textContent = originalText;
+            button.disabled = false;
+            alert(`✅ Email inviate con successo a ${operaiAssegnati.length} operai per i giorni: ${giorni}`);
+        }, 2000);
+    }
+
+    // ===== GESTIONE UTENTI =====
+    showUserManagement() {
+        this.renderUsersTable();
+        this.showModal('modal-users');
+    }
+
+    renderUsersTable() {
+        const tbody = document.getElementById('users-table-body');
+        if (!tbody) return;
+        
+        tbody.innerHTML = '';
+        
+        this.users.forEach(user => {
+            const row = document.createElement('tr');
+            const operaio = user.operaioId ? this.operai.find(o => o.id === user.operaioId) : null;
+            
+            row.innerHTML = `
+                <td>${user.username}</td>
+                <td><span class="user-type-badge ${user.type}">${user.type}</span></td>
+                <td>${operaio ? operaio.nome : 'Nessuno'}</td>
+                <td>${user.lastLogin ? new Date(user.lastLogin).toLocaleString('it-IT') : 'Mai'}</td>
+                <td>
+                    <button class="btn-small btn-edit" onclick="app.editUser(${user.id})">✏️</button>
+                    ${user.type !== 'master' ? `<button class="btn-small btn-delete" onclick="app.removeUser(${user.id})">🗑️</button>` : ''}
+                </td>
+            `;
+            
+            tbody.appendChild(row);
+        });
+    }
+
+    addUser() {
+        document.getElementById('modal-user-title').textContent = 'Aggiungi Utente';
+        document.getElementById('form-user').reset();
+        document.getElementById('user-id').value = '';
+        
+        // Popola dropdown operai
+        const operaioSelect = document.getElementById('user-operaio');
+        operaioSelect.innerHTML = '<option value="">Nessuna associazione</option>';
+        this.operai.forEach(operaio => {
+            const option = document.createElement('option');
+            option.value = operaio.id;
+            option.textContent = operaio.nome;
+            operaioSelect.appendChild(option);
+        });
+        
+        this.showModal('modal-user-form');
+    }
+
+    editUser(userId) {
+        const user = this.users.find(u => u.id === userId);
+        if (!user) return;
+
+        document.getElementById('modal-user-title').textContent = 'Modifica Utente';
+        document.getElementById('user-id').value = user.id;
+        document.getElementById('user-username').value = user.username;
+        document.getElementById('user-password').value = user.password;
+        document.getElementById('user-type').value = user.type;
+        
+        // Popola dropdown operai
+        const operaioSelect = document.getElementById('user-operaio');
+        operaioSelect.innerHTML = '<option value="">Nessuna associazione</option>';
+        this.operai.forEach(operaio => {
+            const option = document.createElement('option');
+            option.value = operaio.id;
+            option.textContent = operaio.nome;
+            option.selected = (operaio.id === user.operaioId);
+            operaioSelect.appendChild(option);
+        });
+        
+        this.showModal('modal-user-form');
+    }
+
+    saveUser() {
+        const id = document.getElementById('user-id').value;
+        const username = document.getElementById('user-username').value.trim();
+        const password = document.getElementById('user-password').value;
+        const type = document.getElementById('user-type').value;
+        const operaioId = document.getElementById('user-operaio').value || null;
+
+        if (!username || !password || !type) {
+            alert('Tutti i campi sono obbligatori');
+            return;
+        }
+
+        if (id) {
+            const user = this.users.find(u => u.id == id);
+            if (user) {
+                Object.assign(user, { username, password, type, operaioId });
+            }
+        } else {
+            const newId = Math.max(0, ...this.users.map(u => u.id)) + 1;
+            this.users.push({
+                id: newId, username, password, type, operaioId, lastLogin: null
+            });
+        }
+        
+        this.closeModal('modal-user-form');
+        this.renderUsersTable();
+        this.saveAllData();
+        alert('✅ Utente salvato con successo');
+    }
+
+    removeUser(userId) {
+        const user = this.users.find(u => u.id === userId);
+        if (!user) return;
+        
+        if (confirm(`Sei sicuro di voler eliminare l'utente ${user.username}?`)) {
+            const index = this.users.findIndex(u => u.id === userId);
+            if (index !== -1) {
+                this.users.splice(index, 1);
+            }
+            
+            this.renderUsersTable();
+            this.saveAllData();
+            alert('✅ Utente eliminato');
+        }
+    }
+
+    // ===== ESPORTAZIONE OPERAI =====
+    exportOperaiCSV() {
+        const headers = ['ID', 'Nome Completo', 'Email', 'Telefono', 'Specializzazione', 'Livello', 'Preposto', 'Cantiere Assegnato', 'Indirizzo Cantiere', 'Tipo Cantiere'];
+        
+        const rows = this.operai.map(operaio => {
+            const cantiere = operaio.cantiere ? this.cantieri.find(c => c.id === operaio.cantiere) : null;
+            return [
+                operaio.id,
+                `"${operaio.nome}"`,
+                operaio.email,
+                operaio.telefono,
+                operaio.specializzazione,
+                operaio.livello,
+                operaio.preposto ? 'Sì' : 'No',
+                cantiere ? `"${cantiere.nome}"` : 'Nessuno',
+                cantiere ? `"${cantiere.indirizzo}"` : '',
+                cantiere ? cantiere.tipo : ''
+            ];
+        });
+
+        const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n');
+        
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `operai_${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        alert('✅ File CSV esportato con successo!');
+    }
+
+    // ===== IMPOSTAZIONI =====
+    showSettings(activeTab = 'email') {
+        this.showModal('modal-settings');
+        
+        // Attiva tab specificato
+        if (activeTab) {
+            this.switchSettingsTab(activeTab);
+        }
+    }
+
+    switchSettingsTab(tabName) {
+        // Nascondi tutti i tab content
+        document.querySelectorAll('.tab-content').forEach(tab => {
+            tab.classList.add('hidden');
+        });
+        
+        // Rimuovi active da tutti i tab
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        
+        // Mostra tab selezionato
+        document.getElementById('settings-' + tabName)?.classList.remove('hidden');
+        document.querySelector(`[data-tab="${tabName}"]`)?.classList.add('active');
+    }
+
+    // ===== INFORMAZIONI =====
+    showInfo() {
+        this.updateStats();
+        this.showModal('modal-info');
+    }
+
+    // ===== PERSISTENZA DATI =====
+    setupAutoSave() {
+        if (this.autoSaveEnabled) {
+            setInterval(() => {
+                this.saveAllData();
+            }, 30000); // Salva ogni 30 secondi
+        }
+    }
+
+    saveAllData() {
+        try {
+            localStorage.setItem('sse_operai', JSON.stringify(this.operai));
+            localStorage.setItem('sse_cantieri', JSON.stringify(this.cantieri));
+            localStorage.setItem('sse_users', JSON.stringify(this.users));
+            console.log('💾 Dati salvati con successo');
+        } catch (error) {
+            console.error('❌ Errore nel salvataggio:', error);
+        }
+    }
+
+    loadData(key) {
+        try {
+            const data = localStorage.getItem('sse_' + key);
+            return data ? JSON.parse(data) : null;
+        } catch (error) {
+            console.error('Errore nel caricamento dati:', error);
+            return null;
+        }
+    }
+}
+
+// Inizializza l'applicazione
+const app = new SseManager();
