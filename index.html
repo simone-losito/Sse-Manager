@@ -3,135 +3,239 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🏗️ Sse Manager</title>
+    <title>Sse Manager Ver 1.6</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏗️</text></svg>">
 </head>
 <body>
-    <!-- SCHERMATA LOGIN -->
+    <!-- LOGIN SCREEN -->
     <div id="login-screen" class="login-screen">
         <div class="login-container">
-            <h1>🏗️ Sse Manager</h1>
-            <p class="subtitle">Powered by Simoncino</p>
+            <div class="login-logo">
+                <div class="logo-icon">🏗️</div>
+                <h1>Sse Manager</h1>
+                <div class="version-badge">Ver 1.6</div>
+            </div>
             
             <div class="login-form">
-                <div class="form-group">
-                    <label for="login-username">Username</label>
-                    <input type="text" id="login-username" class="form-control" placeholder="Inserisci username">
+                <h2>Accesso Sistema</h2>
+                <div class="input-group">
+                    <label for="login-username">Nome Utente</label>
+                    <input type="text" id="login-username" placeholder="Inserisci nome utente" autocomplete="username">
                 </div>
-                
-                <div class="form-group">
+                <div class="input-group">
                     <label for="login-password">Password</label>
-                    <input type="password" id="login-password" class="form-control" placeholder="Inserisci password">
+                    <input type="password" id="login-password" placeholder="Inserisci password" autocomplete="current-password">
                 </div>
-                
-                <button id="login-btn" class="btn btn-primary">🚀 Accedi</button>
+                <button class="btn btn-primary login-btn" id="login-btn">
+                    <span>🔐</span>
+                    Accedi
+                </button>
+                <div id="login-error" class="login-error hidden"></div>
+            </div>
+            
+            <div class="login-footer">
+                <div class="powered-by">
+                    <strong>Powered by:</strong> Simoncino<br>
+                    <strong>Versione:</strong> 1.6<br>
+                    <strong>Creato da:</strong> Simone Losito<br>
+                    <strong>Powered by:</strong> Simoncino
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- APPLICAZIONE PRINCIPALE -->
+    <!-- MAIN APP -->
     <div id="main-app" class="main-app hidden">
         <!-- HEADER -->
         <header class="header">
             <div class="header-left">
-                <h1>🏗️ Sse Manager</h1>
-                <span id="mode-text" class="mode-text">Modalità: Manager</span>
-                <div id="user-info" class="user-info"></div>
-                <div id="stats-container" class="stats-container">
-                    <span class="stat-item">👷 Totali: <strong id="total-operai">0</strong></span>
-                    <span class="stat-item">📍 Assegnati: <strong id="assigned-operai">0</strong></span>
-                    <span class="stat-item">🏗️ Cantieri: <strong id="total-cantieri">0</strong></span>
+                <div class="app-logo">
+                    <span class="logo-icon">🏗️</span>
+                    <span class="app-title">Sse Manager</span>
+                    <span class="version-info">Ver 1.6</span>
                 </div>
             </div>
-            <div class="header-right">
-                <div class="menu-container">
-                    <button id="menu-btn" class="menu-btn">☰ Menu</button>
-                    <div id="menu-dropdown" class="menu-dropdown hidden">
-                        <!-- Menu per Master -->
-                        <div class="menu-section master-only">
-                            <div class="menu-section-title">👑 Amministrazione</div>
-                            <div class="menu-item" data-action="manage-users">👥 Gestione Utenti</div>
-                            <div class="menu-item" data-action="export-operai">📤 Export Dipendenti</div>
-                            <div class="menu-item" data-action="import-operai">📥 Import Dipendenti</div>
-                            <div class="menu-separator"></div>
-                        </div>
-                        
-                        <!-- Menu per tutti -->
-                        <div class="menu-item" data-action="focus-search-operai">🔍 Cerca Operai</div>
-                        <div class="menu-item" data-action="focus-search-cantieri">🔍 Cerca Cantieri</div>
-                        <div class="menu-separator"></div>
-                        <div class="menu-item" data-action="show-operai-list">👷 Lista Operai</div>
-                        <div class="menu-item" data-action="show-cantieri-list">🏗️ Lista Cantieri</div>
-                        <div class="menu-separator"></div>
-                        <div class="menu-item" data-action="show-modify-cantiere">✏️ Modifica Cantiere</div>
-                        <div class="menu-item" data-action="show-delete-cantiere">🗑️ Elimina Cantiere</div>
-                        <div class="menu-separator"></div>
-                        <div class="menu-item" data-action="export-data">💾 Esporta Dati</div>
-                        <div class="menu-item" data-action="import-data">📂 Importa Dati</div>
-                        <div class="menu-separator"></div>
-                        
-                        <!-- Menu solo per Master -->
-                        <div class="menu-section master-only">
-                            <div class="menu-section-title">⚙️ Configurazione</div>
-                            <div class="menu-item" data-action="open-settings">📧 Impostazioni Email</div>
-                            <div class="menu-item" data-action="open-general-settings">⚙️ Impostazioni Generali</div>
-                            <div class="menu-separator"></div>
-                        </div>
-                        
-                        <div class="menu-item" data-action="show-info">ℹ️ Informazioni</div>
-                        <div class="menu-separator"></div>
-                        <div class="menu-item" data-action="logout">🚪 Logout</div>
+            
+            <div class="header-center">
+                <div class="stats-container">
+                    <div class="stat-item">
+                        <div class="stat-label">Operai Totali</div>
+                        <div class="stat-value" id="total-operai">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Operai Assegnati</div>
+                        <div class="stat-value" id="assigned-operai">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Cantieri Attivi</div>
+                        <div class="stat-value" id="total-cantieri">0</div>
                     </div>
                 </div>
+            </div>
+            
+            <div class="header-right">
+                <div class="user-info">
+                    <span class="user-name" id="user-name">Utente</span>
+                    <span class="user-role" id="user-role">Master</span>
+                </div>
+                <button class="menu-btn" id="menu-btn">
+                    <span class="menu-icon">☰</span>
+                </button>
             </div>
         </header>
 
-        <!-- CONTENUTO PRINCIPALE -->
+        <!-- MENU DROPDOWN -->
+        <div class="menu-container hidden" id="menu-container">
+            <div class="menu-dropdown">
+                <div class="menu-section">
+                    <div class="menu-section-title">🔍 Ricerca</div>
+                    <div class="menu-item" data-action="focus-search-operai">
+                        <span class="menu-icon">👷</span>
+                        <span>Cerca Operai</span>
+                    </div>
+                    <div class="menu-item" data-action="focus-search-cantieri">
+                        <span class="menu-icon">🏗️</span>
+                        <span>Cerca Cantieri</span>
+                    </div>
+                </div>
+                
+                <div class="menu-section">
+                    <div class="menu-section-title">📋 Visualizza</div>
+                    <div class="menu-item" data-action="show-operai-list">
+                        <span class="menu-icon">👥</span>
+                        <span>Lista Operai</span>
+                    </div>
+                    <div class="menu-item" data-action="show-cantieri-list">
+                        <span class="menu-icon">🏢</span>
+                        <span>Lista Cantieri</span>
+                    </div>
+                </div>
+                
+                <div class="menu-section" id="cantiere-actions">
+                    <div class="menu-section-title">🏗️ Gestione Cantieri</div>
+                    <div class="menu-item" data-action="show-modify-cantiere">
+                        <span class="menu-icon">✏️</span>
+                        <span>Modifica Cantiere</span>
+                    </div>
+                    <div class="menu-item" data-action="show-delete-cantiere">
+                        <span class="menu-icon">🗑️</span>
+                        <span>Elimina Cantiere</span>
+                    </div>
+                </div>
+                
+                <div class="menu-section">
+                    <div class="menu-section-title">📊 Import/Export</div>
+                    <div class="menu-item" data-action="export-operai-excel">
+                        <span class="menu-icon">📤</span>
+                        <span>Esporta Operai Excel</span>
+                    </div>
+                    <div class="menu-item" data-action="import-operai-excel">
+                        <span class="menu-icon">📥</span>
+                        <span>Importa Operai Excel</span>
+                    </div>
+                    <div class="menu-item" data-action="export-data">
+                        <span class="menu-icon">💾</span>
+                        <span>Esporta Backup</span>
+                    </div>
+                    <div class="menu-item" data-action="import-data">
+                        <span class="menu-icon">📂</span>
+                        <span>Importa Backup</span>
+                    </div>
+                </div>
+                
+                <div class="menu-section" id="admin-section">
+                    <div class="menu-section-title">⚙️ Amministrazione</div>
+                    <div class="menu-item" data-action="manage-users">
+                        <span class="menu-icon">👤</span>
+                        <span>Gestione Utenti</span>
+                    </div>
+                    <div class="menu-item" data-action="open-settings">
+                        <span class="menu-icon">🔧</span>
+                        <span>Impostazioni</span>
+                    </div>
+                </div>
+                
+                <div class="menu-section">
+                    <div class="menu-section-title">ℹ️ Informazioni</div>
+                    <div class="menu-item" data-action="show-info">
+                        <span class="menu-icon">📊</span>
+                        <span>Statistiche</span>
+                    </div>
+                    <div class="menu-item" data-action="logout">
+                        <span class="menu-icon">🚪</span>
+                        <span>Logout</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MAIN CONTENT -->
         <main class="main-content">
-            <!-- SIDEBAR OPERAI -->
-            <div class="sidebar">
-                <div class="sidebar-header">
-                    <h2>👷 Gestione Operai</h2>
-                    <input type="text" id="search-operai" placeholder="Cerca operaio, specializzazione..." class="search-input">
-                    <div class="filter-controls">
+            <!-- OPERAI PANEL -->
+            <section class="operai-panel">
+                <div class="panel-header">
+                    <h2>👷 Operai</h2>
+                    <button class="btn btn-add" id="add-operaio-btn">
+                        <span>➕</span>
+                        Aggiungi Operaio
+                    </button>
+                </div>
+                
+                <div class="controls" id="controls-operai">
+                    <div class="search-container">
+                        <input type="text" id="search-operai" placeholder="🔍 Cerca operai..." class="search-input">
+                    </div>
+                    
+                    <div class="filters-container">
                         <select id="filter-specializzazione" class="filter-select">
                             <option value="">Tutte le specializzazioni</option>
-                            <option value="Elettricista">⚡ Elettricista</option>
-                            <option value="Meccanico">🔧 Meccanico</option>
-                            <option value="Muratore">🧱 Muratore</option>
-                            <option value="Carpentiere">🪵 Carpentiere</option>
-                            <option value="Idraulico">🚰 Idraulico</option>
-                            <option value="Saldatore">🔥 Saldatore</option>
-                            <option value="Operatore Macchine">🚜 Operatore Macchine</option>
+                            <option value="Elettricista">Elettricista</option>
+                            <option value="Meccanico">Meccanico</option>
+                            <option value="Muratore">Muratore</option>
+                            <option value="Idraulico">Idraulico</option>
+                            <option value="Carpentiere">Carpentiere</option>
                         </select>
+                        
                         <select id="filter-livello" class="filter-select">
                             <option value="">Tutti i livelli</option>
-                            <option value="1">1 - Apprendista</option>
-                            <option value="2">2 - Junior</option>
-                            <option value="3">3 - Standard</option>
-                            <option value="4">4 - Senior</option>
-                            <option value="5">5 - Esperto</option>
+                            <option value="1">Livello 1</option>
+                            <option value="2">Livello 2</option>
+                            <option value="3">Livello 3</option>
+                            <option value="4">Livello 4</option>
+                            <option value="5">Livello 5</option>
                         </select>
+                        
                         <select id="filter-preposto" class="filter-select">
                             <option value="">Tutti</option>
-                            <option value="si">Solo Preposti</option>
-                            <option value="no">Solo Non Preposti</option>
+                            <option value="true">Solo Preposti</option>
+                            <option value="false">Solo Non Preposti</option>
                         </select>
                     </div>
                 </div>
-                <div id="controls-operai" class="controls"></div>
-                <div id="operai-container" class="operai-container"></div>
-            </div>
+                
+                <div class="operai-container" id="operai-container">
+                    <!-- Operai cards dinamiche -->
+                </div>
+            </section>
 
-            <!-- AREA MAPPA CANTIERI -->
-            <div class="map-area">
+            <!-- MAP AREA -->
+            <section class="map-area">
                 <div class="map-header">
                     <h2>🗺️ Mappa Cantieri</h2>
-                    <input type="text" id="search-cantieri" placeholder="Cerca cantiere..." class="search-input">
+                    <div class="map-controls">
+                        <input type="text" id="search-cantieri" placeholder="🔍 Cerca cantieri..." class="search-input">
+                        <button class="btn btn-add" id="add-cantiere-btn">
+                            <span>➕</span>
+                            Nuovo Cantiere
+                        </button>
+                    </div>
                 </div>
-                <div id="controls-cantieri" class="controls"></div>
-                <div id="map-container" class="map-container"></div>
-            </div>
+                
+                <div class="map-container" id="map-container">
+                    <!-- Cantieri dinamici posizionati -->
+                </div>
+            </section>
         </main>
     </div>
 
@@ -140,57 +244,50 @@
         <div class="modal-content">
             <h3 id="modal-operaio-title">Aggiungi Operaio</h3>
             <form id="form-operaio">
-                <input type="hidden" id="operaio-id">
-                
-                <div class="form-group">
-                    <label>Nome Completo</label>
-                    <input type="text" id="operaio-nome" class="form-control" required>
+                <div class="input-group">
+                    <label for="operaio-nome">Nome Completo</label>
+                    <input type="text" id="operaio-nome" required>
                 </div>
-                
-                <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" id="operaio-email" class="form-control" required>
+                <div class="input-group">
+                    <label for="operaio-email">Email</label>
+                    <input type="email" id="operaio-email" required>
                 </div>
-                
-                <div class="form-group">
-                    <label>Telefono</label>
-                    <input type="tel" id="operaio-telefono" class="form-control" required>
+                <div class="input-group">
+                    <label for="operaio-telefono">Telefono</label>
+                    <input type="tel" id="operaio-telefono" required>
                 </div>
-                
-                <div class="form-group">
-                    <label>Specializzazione</label>
-                    <select id="operaio-specializzazione" class="form-control" required>
+                <div class="input-group">
+                    <label for="operaio-specializzazione">Specializzazione</label>
+                    <select id="operaio-specializzazione" required>
                         <option value="">Seleziona specializzazione</option>
-                        <option value="Elettricista">⚡ Elettricista</option>
-                        <option value="Meccanico">🔧 Meccanico</option>
-                        <option value="Muratore">🧱 Muratore</option>
-                        <option value="Carpentiere">🪵 Carpentiere</option>
-                        <option value="Idraulico">🚰 Idraulico</option>
-                        <option value="Saldatore">🔥 Saldatore</option>
-                        <option value="Operatore Macchine">🚜 Operatore Macchine</option>
+                        <option value="Elettricista">Elettricista</option>
+                        <option value="Meccanico">Meccanico</option>
+                        <option value="Muratore">Muratore</option>
+                        <option value="Idraulico">Idraulico</option>
+                        <option value="Carpentiere">Carpentiere</option>
                     </select>
                 </div>
-                
-                <div class="form-group">
-                    <label>Livello di Esperienza</label>
-                    <select id="operaio-livello" class="form-control" required>
+                <div class="input-group">
+                    <label for="operaio-livello">Livello</label>
+                    <select id="operaio-livello" required>
                         <option value="">Seleziona livello</option>
-                        <option value="1">1 - Apprendista</option>
-                        <option value="2">2 - Junior</option>
-                        <option value="3">3 - Standard</option>
-                        <option value="4">4 - Senior</option>
-                        <option value="5">5 - Esperto</option>
+                        <option value="1">Livello 1</option>
+                        <option value="2">Livello 2</option>
+                        <option value="3">Livello 3</option>
+                        <option value="4">Livello 4</option>
+                        <option value="5">Livello 5</option>
                     </select>
                 </div>
-                
-                <div class="checkbox-container">
-                    <input type="checkbox" id="operaio-preposto">
-                    <label for="operaio-preposto">⭐ Preposto/Supervisore</label>
+                <div class="checkbox-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="operaio-preposto">
+                        <span class="checkmark"></span>
+                        Preposto
+                    </label>
                 </div>
-                
                 <div class="modal-actions">
-                    <button type="button" id="cancel-operaio" class="btn btn-secondary">❌ Annulla</button>
-                    <button type="submit" class="btn btn-primary">💾 Salva</button>
+                    <button type="button" class="btn btn-secondary" id="cancel-operaio">Annulla</button>
+                    <button type="submit" class="btn btn-primary">Salva</button>
                 </div>
             </form>
         </div>
@@ -201,301 +298,245 @@
         <div class="modal-content">
             <h3 id="modal-cantiere-title">Aggiungi Cantiere</h3>
             <form id="form-cantiere">
-                <input type="hidden" id="cantiere-id">
-                
-                <div class="form-group">
-                    <label>Nome Cantiere</label>
-                    <input type="text" id="cantiere-nome" class="form-control" required>
+                <div class="input-group">
+                    <label for="cantiere-nome">Nome Cantiere</label>
+                    <input type="text" id="cantiere-nome" required>
                 </div>
-                
-                <div class="form-group">
-                    <label>Indirizzo</label>
-                    <input type="text" id="cantiere-indirizzo" class="form-control" placeholder="Via, Civico, Città" required>
+                <div class="input-group">
+                    <label for="cantiere-indirizzo">Indirizzo</label>
+                    <input type="text" id="cantiere-indirizzo" required>
                 </div>
-                
-                <div class="form-group">
-                    <label>Tipo di Cantiere</label>
-                    <select id="cantiere-tipo" class="form-control" required>
+                <div class="input-group">
+                    <label for="cantiere-tipo">Tipo Cantiere</label>
+                    <select id="cantiere-tipo" required>
                         <option value="">Seleziona tipo</option>
-                        <option value="Civile">🏰 Civile</option>
-                        <option value="Industriale">🏭 Industriale</option>
-                        <option value="Residenziale">🏢 Residenziale</option>
-                        <option value="Stradale">🛣️ Stradale</option>
-                        <option value="Ferroviario">🚂 Ferroviario</option>
+                        <option value="Civile">Civile</option>
+                        <option value="Industriale">Industriale</option>
+                        <option value="Residenziale">Residenziale</option>
+                        <option value="Commerciale">Commerciale</option>
+                        <option value="Infrastrutturale">Infrastrutturale</option>
                     </select>
                 </div>
-                
                 <div class="modal-actions">
-                    <button type="button" id="cancel-cantiere" class="btn btn-secondary">❌ Annulla</button>
-                    <button type="submit" class="btn btn-primary">💾 Salva</button>
+                    <button type="button" class="btn btn-secondary" id="cancel-cantiere">Annulla</button>
+                    <button type="submit" class="btn btn-primary">Salva</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- MODAL DETTAGLI CANTIERE -->
+    <!-- MODAL CANTIERE DETAILS -->
     <div id="modal-cantiere-details" class="modal hidden">
         <div class="modal-content modal-content-large">
             <h3 id="cantiere-details-title">Dettagli Cantiere</h3>
             
-            <div id="cantiere-details-content">
-                <div class="cantiere-info-section">
-                    <h4>📋 Informazioni Generali</h4>
-                    <div id="cantiere-basic-info"></div>
+            <div class="cantiere-info-section">
+                <div id="cantiere-details-info"></div>
+            </div>
+            
+            <div class="operai-section">
+                <h4>👷 Operai Assegnati</h4>
+                <div id="cantiere-operai-list"></div>
+            </div>
+            
+            <div class="calendar-section">
+                <h4>📅 Calendario Partecipazioni</h4>
+                <div class="calendar-header">
+                    <button class="calendar-nav prev-month">◀</button>
+                    <h5 id="calendar-month-year"></h5>
+                    <button class="calendar-nav next-month">▶</button>
                 </div>
-
-                <div class="operai-list">
-                    <h4>👷 Operai Assegnati</h4>
-                    <div id="cantiere-operai-list"></div>
-                </div>
-
-                <div class="calendar-section">
-                    <div class="calendar-header">
-                        <button class="calendar-nav prev-month">‹</button>
-                        <h4 id="calendar-month-year"></h4>
-                        <button class="calendar-nav next-month">›</button>
-                    </div>
-                    <div class="calendar-grid" id="calendar-grid"></div>
-                </div>
-
-                <div class="time-slot-container">
-                    <h4>⏰ Orario di Lavoro</h4>
+                <div class="calendar-grid" id="calendar-grid"></div>
+                
+                <div class="time-slots">
+                    <h5>⏰ Orari di Lavoro</h5>
                     <div class="time-inputs">
-                        <label>
-                            Inizio: <input type="time" id="time-start" class="form-control">
-                        </label>
-                        <label>
-                            Fine: <input type="time" id="time-end" class="form-control">
-                        </label>
+                        <div class="input-group">
+                            <label for="time-start">Inizio</label>
+                            <input type="time" id="time-start" value="08:00">
+                        </div>
+                        <div class="input-group">
+                            <label for="time-end">Fine</label>
+                            <input type="time" id="time-end" value="17:00">
+                        </div>
                     </div>
                 </div>
-
+                
                 <div class="email-section">
-                    <h4>📧 Invio Email di Partecipazione</h4>
-                    <button id="btn-send-emails" class="btn-send-email">
-                        📤 Invia Email agli Operai
+                    <button class="btn btn-primary" id="btn-send-emails">
+                        <span>📧</span>
+                        Invia Email Partecipazioni
                     </button>
                 </div>
             </div>
-
+            
             <div class="modal-actions">
-                <button id="close-cantiere-details" class="btn btn-primary">✅ Chiudi</button>
+                <button class="btn btn-secondary" id="close-cantiere-details">Chiudi</button>
             </div>
         </div>
     </div>
 
     <!-- MODAL GESTIONE UTENTI -->
     <div id="modal-users" class="modal hidden">
-        <div class="modal-content modal-large">
-            <h3>👥 Gestione Utenti</h3>
+        <div class="modal-content modal-content-large">
+            <h3>👤 Gestione Utenti</h3>
             
-            <div class="users-controls">
-                <button id="add-user-btn" class="btn btn-primary">➕ Aggiungi Utente</button>
-            </div>
-            
-            <div class="users-list">
-                <table class="users-table">
-                    <thead>
-                        <tr>
-                            <th>Username</th>
-                            <th>Tipo</th>
-                            <th>Operaio Associato</th>
-                            <th>Ultimo Accesso</th>
-                            <th>Azioni</th>
-                        </tr>
-                    </thead>
-                    <tbody id="users-table-body">
-                    </tbody>
-                </table>
+            <div class="users-section">
+                <div class="users-header">
+                    <button class="btn btn-add" id="add-user-btn">
+                        <span>➕</span>
+                        Nuovo Utente
+                    </button>
+                </div>
+                
+                <div class="users-list" id="users-list">
+                    <!-- Lista utenti dinamica -->
+                </div>
             </div>
             
             <div class="modal-actions">
-                <button id="close-users" class="btn btn-primary">✅ Chiudi</button>
+                <button class="btn btn-secondary" id="close-users">Chiudi</button>
             </div>
         </div>
     </div>
 
-    <!-- MODAL AGGIUNGI/MODIFICA UTENTE -->
-    <div id="modal-user-form" class="modal hidden">
+    <!-- MODAL NUOVO UTENTE -->
+    <div id="modal-new-user" class="modal hidden">
         <div class="modal-content">
-            <h3 id="modal-user-title">Aggiungi Utente</h3>
+            <h3 id="modal-user-title">Nuovo Utente</h3>
             <form id="form-user">
-                <input type="hidden" id="user-id">
-                
-                <div class="form-group">
-                    <label>Username</label>
-                    <input type="text" id="user-username" class="form-control" required>
+                <div class="input-group">
+                    <label for="user-name">Nome Utente</label>
+                    <input type="text" id="user-name" required>
                 </div>
-                
-                <div class="form-group">
-                    <label>Password</label>
-                    <input type="password" id="user-password" class="form-control" required>
+                <div class="input-group">
+                    <label for="user-password">Password</label>
+                    <input type="password" id="user-password" required>
                 </div>
-                
-                <div class="form-group">
-                    <label>Tipo Utente</label>
-                    <select id="user-type" class="form-control" required>
-                        <option value="operaio">Operaio</option>
-                        <option value="manager">Manager</option>
-                    </select>
+                <div class="input-group">
+                    <label for="user-full-name">Nome Completo</label>
+                    <input type="text" id="user-full-name" required>
                 </div>
-                
-                <div class="form-group">
-                    <label>Associa a Operaio (opzionale)</label>
-                    <select id="user-operaio" class="form-control">
-                        <option value="">Nessuna associazione</option>
-                    </select>
+                <div class="input-group">
+                    <label for="user-email">Email</label>
+                    <input type="email" id="user-email" required>
                 </div>
-                
+                <div class="checkbox-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="user-admin">
+                        <span class="checkmark"></span>
+                        Amministratore
+                    </label>
+                </div>
                 <div class="modal-actions">
-                    <button type="button" id="cancel-user" class="btn btn-secondary">❌ Annulla</button>
-                    <button type="submit" class="btn btn-primary">💾 Salva</button>
+                    <button type="button" class="btn btn-secondary" id="cancel-user">Annulla</button>
+                    <button type="submit" class="btn btn-primary">Salva</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- MODAL IMPOSTAZIONI -->
+    <!-- MODAL SETTINGS -->
     <div id="modal-settings" class="modal hidden">
-        <div class="modal-content modal-large">
-            <h3>⚙️ Impostazioni Sistema</h3>
+        <div class="modal-content modal-content-large">
+            <h3>⚙️ Impostazioni</h3>
             
             <div class="tabs-container">
-                <div class="tab active" data-tab="email">📧 Email</div>
-                <div class="tab" data-tab="general">🌐 Generali</div>
+                <div class="tab active" data-tab="general">Generali</div>
+                <div class="tab" data-tab="email">Email</div>
+                <div class="tab" data-tab="backup">Backup</div>
             </div>
-
-            <!-- TAB EMAIL -->
-            <div id="settings-email" class="tab-content">
-                <h4>📧 Configurazione Email SMTP</h4>
-                
-                <div class="form-group">
-                    <label>Server SMTP</label>
-                    <input type="text" id="smtp-server" class="form-control" placeholder="smtp.gmail.com">
+            
+            <div id="tab-general" class="tab-content">
+                <div class="setting-group">
+                    <label class="setting-label">
+                        <input type="checkbox" id="auto-save-enabled" checked>
+                        <span class="checkmark"></span>
+                        Salvataggio Automatico
+                    </label>
                 </div>
                 
-                <div class="form-group">
-                    <label>Porta SMTP</label>
-                    <input type="number" id="smtp-port" class="form-control" placeholder="587" value="587">
-                </div>
-                
-                <div class="form-group">
-                    <label>Email Mittente</label>
-                    <input type="email" id="sender-email" class="form-control" placeholder="cantieri@azienda.com">
-                </div>
-                
-                <div class="form-group">
-                    <label>Password Email</label>
-                    <input type="password" id="email-password" class="form-control" placeholder="Password o App Password">
-                </div>
-                
-                <div class="form-group">
-                    <label>Nome Mittente</label>
-                    <input type="text" id="sender-name" class="form-control" value="Sistema Cantieri">
-                </div>
-                
-                <div class="form-group">
-                    <label>Oggetto Email</label>
-                    <input type="text" id="email-subject" class="form-control" value="Convocazione Cantiere - {cantiere}">
-                </div>
-                
-                <div class="form-group">
-                    <label>Template Email</label>
-                    <textarea id="email-template" class="form-control" rows="8" placeholder="Template del messaggio email..."></textarea>
-                </div>
-                
-                <div class="email-actions">
-                    <button id="test-email" class="btn btn-secondary">🔧 Test Connessione</button>
-                    <button id="reset-email" class="btn btn-secondary">🔄 Reset</button>
-                    <button id="save-email" class="btn btn-primary">💾 Salva</button>
-                </div>
-            </div>
-
-            <!-- TAB GENERALI -->
-            <div id="settings-general" class="tab-content hidden">
-                <h4>🌐 Impostazioni Generali</h4>
-                
-                <div class="form-group">
-                    <label>Nome Azienda</label>
-                    <input type="text" id="company-name" class="form-control" value="Standard System Engineering Srl">
-                </div>
-                
-                <div class="form-group">
-                    <label>Timezone</label>
-                    <select id="timezone" class="form-control">
-                        <option value="Europe/Rome">Europe/Rome</option>
-                        <option value="Europe/London">Europe/London</option>
-                        <option value="Europe/Berlin">Europe/Berlin</option>
-                        <option value="Europe/Paris">Europe/Paris</option>
+                <div class="setting-group">
+                    <label for="theme-select">Tema</label>
+                    <select id="theme-select">
+                        <option value="auto">Automatico</option>
+                        <option value="light">Chiaro</option>
+                        <option value="dark">Scuro</option>
                     </select>
                 </div>
-                
-                <div class="form-group">
-                    <label>Lingua</label>
-                    <select id="language" class="form-control">
-                        <option value="it">Italiano</option>
-                        <option value="en">English</option>
-                        <option value="es">Español</option>
-                        <option value="fr">Français</option>
-                    </select>
+            </div>
+            
+            <div id="tab-email" class="tab-content hidden">
+                <div class="input-group">
+                    <label for="smtp-server">Server SMTP</label>
+                    <input type="text" id="smtp-server" placeholder="smtp.gmail.com">
                 </div>
-                
-                <div class="form-group">
-                    <label>Formato Data</label>
-                    <select id="datetime-format" class="form-control">
-                        <option value="dd/mm/yyyy">dd/mm/yyyy</option>
-                        <option value="mm/dd/yyyy">mm/dd/yyyy</option>
-                        <option value="yyyy-mm-dd">yyyy-mm-dd</option>
-                    </select>
+                <div class="input-group">
+                    <label for="smtp-port">Porta</label>
+                    <input type="number" id="smtp-port" placeholder="587">
                 </div>
-                
-                <div class="general-actions">
-                    <button id="reset-general" class="btn btn-secondary">🔄 Reset</button>
-                    <button id="save-general" class="btn btn-primary">💾 Salva</button>
+                <div class="input-group">
+                    <label for="smtp-user">Username</label>
+                    <input type="text" id="smtp-user" placeholder="tuo@email.com">
+                </div>
+                <div class="input-group">
+                    <label for="smtp-pass">Password</label>
+                    <input type="password" id="smtp-pass" placeholder="Password email">
                 </div>
             </div>
-
+            
+            <div id="tab-backup" class="tab-content hidden">
+                <div class="backup-options">
+                    <button class="btn btn-primary" id="create-backup">
+                        <span>💾</span>
+                        Crea Backup Completo
+                    </button>
+                    
+                    <button class="btn btn-secondary" id="schedule-backup">
+                        <span>⏰</span>
+                        Backup Programmato
+                    </button>
+                </div>
+            </div>
+            
             <div class="modal-actions">
-                <button id="close-settings" class="btn btn-primary">✅ Chiudi</button>
+                <button class="btn btn-secondary" id="close-settings">Chiudi</button>
+                <button class="btn btn-primary" id="save-settings">Salva Impostazioni</button>
             </div>
         </div>
     </div>
 
-    <!-- MODAL INFORMAZIONI -->
+    <!-- MODAL INFO -->
     <div id="modal-info" class="modal hidden">
         <div class="modal-content">
-            <h3>ℹ️ Informazioni Sistema</h3>
+            <h3>📊 Statistiche Sistema</h3>
             
-            <div class="info-content">
-                <div class="info-section">
-                    <h4>🏗️ Sse Manager</h4>
-                    <p><strong>Versione:</strong> 1.5</p>
-                    <p><strong>Creato da:</strong> Simone Losito</p>
-                    <p><strong>Powered by:</strong> Simoncino</p>
+            <div class="info-stats">
+                <div class="info-stat">
+                    <div class="info-stat-label">Operai Totali</div>
+                    <div class="info-stat-value" id="info-total-operai">0</div>
                 </div>
                 
-                <div class="info-section">
-                    <h4>📊 Statistiche Correnti</h4>
-                    <p><strong>Operai Totali:</strong> <span id="info-total-operai">0</span></p>
-                    <p><strong>Operai Assegnati:</strong> <span id="info-assigned-operai">0</span></p>
-                    <p><strong>Cantieri Attivi:</strong> <span id="info-total-cantieri">0</span></p>
+                <div class="info-stat">
+                    <div class="info-stat-label">Operai Assegnati</div>
+                    <div class="info-stat-value" id="info-assigned-operai">0</div>
                 </div>
                 
-                <div class="info-section">
-                    <h4>💡 Caratteristiche</h4>
-                    <ul>
-                        <li>Gestione completa operai e cantieri</li>
-                        <li>Drag & Drop assegnazioni</li>
-                        <li>Calendario interattivo</li>
-                        <li>Sistema email integrato</li>
-                        <li>Import/Export dati</li>
-                        <li>Design responsive</li>
-                    </ul>
+                <div class="info-stat">
+                    <div class="info-stat-label">Cantieri Totali</div>
+                    <div class="info-stat-value" id="info-total-cantieri">0</div>
                 </div>
             </div>
-
+            
+            <div class="system-info">
+                <h4>Sistema</h4>
+                <p><strong>Versione:</strong> 1.6</p>
+                <p><strong>Ultimo Salvataggio:</strong> <span id="last-save-time">-</span></p>
+                <p><strong>Sviluppatore:</strong> Simone Losito</p>
+            </div>
+            
             <div class="modal-actions">
-                <button id="close-info" class="btn btn-primary">✅ Chiudi</button>
+                <button class="btn btn-secondary" id="close-info">Chiudi</button>
             </div>
         </div>
     </div>
