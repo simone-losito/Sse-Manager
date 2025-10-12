@@ -12,7 +12,7 @@
         <div class="login-container">
             <h1>🏗️ Sse Manager</h1>
             <p class="subtitle">Sviluppato e pensato da Simone Losito</p>
-            <button onclick="app.loginMaster()" class="btn btn-primary">🚀 Entra come Manager</button>
+            <button id="login-btn" class="btn btn-primary">🚀 Entra come Manager</button>
         </div>
     </div>
 
@@ -26,21 +26,21 @@
             </div>
             <div class="header-right">
                 <div class="menu-container">
-                    <button onclick="app.toggleMenu()" class="menu-btn">☰ Menu</button>
+                    <button id="menu-btn" class="menu-btn">☰ Menu</button>
                     <div id="menu-dropdown" class="menu-dropdown hidden">
-                        <div class="menu-item" onclick="app.focusSearchOperai()">🔍 Cerca Operai</div>
-                        <div class="menu-item" onclick="app.focusSearchCantieri()">🔍 Cerca Cantieri</div>
+                        <div class="menu-item" data-action="focus-search-operai">🔍 Cerca Operai</div>
+                        <div class="menu-item" data-action="focus-search-cantieri">🔍 Cerca Cantieri</div>
                         <div class="menu-separator"></div>
-                        <div class="menu-item" onclick="app.showOperaiList()">👷 Lista Operai</div>
-                        <div class="menu-item" onclick="app.showCantieriList()">🏗️ Lista Cantieri</div>
+                        <div class="menu-item" data-action="show-operai-list">👷 Lista Operai</div>
+                        <div class="menu-item" data-action="show-cantieri-list">🏗️ Lista Cantieri</div>
                         <div class="menu-separator"></div>
-                        <div class="menu-item" onclick="app.showModifyCantiereMenu()">✏️ Modifica Cantiere</div>
-                        <div class="menu-item" onclick="app.showDeleteCantiereMenu()">🗑️ Elimina Cantiere</div>
+                        <div class="menu-item" data-action="show-modify-cantiere">✏️ Modifica Cantiere</div>
+                        <div class="menu-item" data-action="show-delete-cantiere">🗑️ Elimina Cantiere</div>
                         <div class="menu-separator"></div>
-                        <div class="menu-item" onclick="app.openSettings()">📧 Impostazioni Email</div>
-                        <div class="menu-item" onclick="app.openGeneralSettings()">⚙️ Impostazioni Generali</div>
+                        <div class="menu-item" data-action="open-settings">📧 Impostazioni Email</div>
+                        <div class="menu-item" data-action="open-general-settings">⚙️ Impostazioni Generali</div>
                         <div class="menu-separator"></div>
-                        <div class="menu-item" onclick="app.logout()">🚪 Logout</div>
+                        <div class="menu-item" data-action="logout">🚪 Logout</div>
                     </div>
                 </div>
             </div>
@@ -74,7 +74,7 @@
     <div id="modal-operaio" class="modal hidden">
         <div class="modal-content">
             <h3 id="modal-operaio-title">Aggiungi Operaio</h3>
-            <form id="form-operaio" onsubmit="return false;">
+            <form id="form-operaio">
                 <input type="hidden" id="operaio-id">
                 
                 <div class="form-group">
@@ -124,7 +124,7 @@
                 </div>
                 
                 <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" onclick="app.closeModal()">❌ Annulla</button>
+                    <button type="button" id="cancel-operaio" class="btn btn-secondary">❌ Annulla</button>
                     <button type="submit" class="btn btn-primary">💾 Salva</button>
                 </div>
             </form>
@@ -135,7 +135,7 @@
     <div id="modal-cantiere" class="modal hidden">
         <div class="modal-content">
             <h3 id="modal-cantiere-title">Aggiungi Cantiere</h3>
-            <form id="form-cantiere" onsubmit="return false;">
+            <form id="form-cantiere">
                 <input type="hidden" id="cantiere-id">
                 
                 <div class="form-group">
@@ -156,7 +156,7 @@
                 </div>
                 
                 <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" onclick="app.closeModal()">❌ Annulla</button>
+                    <button type="button" id="cancel-cantiere" class="btn btn-secondary">❌ Annulla</button>
                     <button type="submit" class="btn btn-primary">💾 Salva</button>
                 </div>
             </form>
@@ -181,9 +181,9 @@
 
                 <div class="calendar-section">
                     <div class="calendar-header">
-                        <button class="calendar-nav" onclick="app.changeMonth(-1)">‹</button>
+                        <button class="calendar-nav prev-month">‹</button>
                         <h4 id="calendar-month-year"></h4>
-                        <button class="calendar-nav" onclick="app.changeMonth(1)">›</button>
+                        <button class="calendar-nav next-month">›</button>
                     </div>
                     <div class="calendar-grid" id="calendar-grid"></div>
                 </div>
@@ -192,24 +192,24 @@
                     <h4>⏰ Orario di Lavoro</h4>
                     <div class="time-inputs">
                         <label>
-                            Inizio: <input type="time" id="time-start" class="form-control" onchange="app.handleTimeChange()">
+                            Inizio: <input type="time" id="time-start" class="form-control">
                         </label>
                         <label>
-                            Fine: <input type="time" id="time-end" class="form-control" onchange="app.handleTimeChange()">
+                            Fine: <input type="time" id="time-end" class="form-control">
                         </label>
                     </div>
                 </div>
 
                 <div class="email-section">
                     <h4>📧 Invio Email di Partecipazione</h4>
-                    <button id="btn-send-emails" class="btn-send-email" onclick="app.sendParticipationEmails()">
+                    <button id="btn-send-emails" class="btn-send-email">
                         📤 Invia Email agli Operai
                     </button>
                 </div>
             </div>
 
             <div class="modal-actions">
-                <button class="btn btn-primary" onclick="app.closeCantiereModal()">✅ Chiudi</button>
+                <button id="close-cantiere-details" class="btn btn-primary">✅ Chiudi</button>
             </div>
         </div>
     </div>
@@ -220,8 +220,8 @@
             <h3>⚙️ Impostazioni Sistema</h3>
             
             <div class="tabs-container">
-                <div class="tab active" onclick="app.showSettingsTab('email')">📧 Email</div>
-                <div class="tab" onclick="app.showSettingsTab('general')">🌐 Generali</div>
+                <div class="tab active" data-tab="email">📧 Email</div>
+                <div class="tab" data-tab="general">🌐 Generali</div>
             </div>
 
             <!-- TAB EMAIL -->
@@ -264,9 +264,9 @@
                 </div>
                 
                 <div class="email-actions">
-                    <button onclick="app.testEmailConnection()" class="btn btn-secondary">🔧 Test Connessione</button>
-                    <button onclick="app.resetEmailSettings()" class="btn btn-secondary">🔄 Reset</button>
-                    <button onclick="app.saveEmailSettings()" class="btn btn-primary">💾 Salva</button>
+                    <button id="test-email" class="btn btn-secondary">🔧 Test Connessione</button>
+                    <button id="reset-email" class="btn btn-secondary">🔄 Reset</button>
+                    <button id="save-email" class="btn btn-primary">💾 Salva</button>
                 </div>
             </div>
 
@@ -309,13 +309,13 @@
                 </div>
                 
                 <div class="general-actions">
-                    <button onclick="app.resetGeneralSettings()" class="btn btn-secondary">🔄 Reset</button>
-                    <button onclick="app.saveGeneralSettings()" class="btn btn-primary">💾 Salva</button>
+                    <button id="reset-general" class="btn btn-secondary">🔄 Reset</button>
+                    <button id="save-general" class="btn btn-primary">💾 Salva</button>
                 </div>
             </div>
 
             <div class="modal-actions">
-                <button class="btn btn-primary" onclick="app.closeSettings()">✅ Chiudi</button>
+                <button id="close-settings" class="btn btn-primary">✅ Chiudi</button>
             </div>
         </div>
     </div>
