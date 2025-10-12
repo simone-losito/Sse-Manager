@@ -1,3 +1,4 @@
+<!-- index.html -->
 <!DOCTYPE html>
 <html lang="it">
 <head>
@@ -12,7 +13,25 @@
         <div class="login-container">
             <h1>🏗️ Sse Manager</h1>
             <p class="subtitle">Powered by Simoncino</p>
-            <button id="login-btn" class="btn btn-primary">🚀 Entra come Manager</button>
+            
+            <div class="login-form">
+                <div class="form-group">
+                    <label for="login-username">Username</label>
+                    <input type="text" id="login-username" class="form-control" placeholder="Inserisci username">
+                </div>
+                
+                <div class="form-group">
+                    <label for="login-password">Password</label>
+                    <input type="password" id="login-password" class="form-control" placeholder="Inserisci password">
+                </div>
+                
+                <button id="login-btn" class="btn btn-primary">🚀 Accedi</button>
+                
+                <div class="login-info">
+                    <p><strong>Accesso Master:</strong> user: master | password: Sse19731973!</p>
+                    <p><strong>Accesso Operaio:</strong> Usa le tue credenziali personali</p>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -23,6 +42,7 @@
             <div class="header-left">
                 <h1>🏗️ Sse Manager</h1>
                 <span id="mode-text" class="mode-text">Modalità: Manager</span>
+                <div id="user-info" class="user-info"></div>
                 <div id="stats-container" class="stats-container">
                     <span class="stat-item">👷 Totali: <strong id="total-operai">0</strong></span>
                     <span class="stat-item">📍 Assegnati: <strong id="assigned-operai">0</strong></span>
@@ -33,6 +53,16 @@
                 <div class="menu-container">
                     <button id="menu-btn" class="menu-btn">☰ Menu</button>
                     <div id="menu-dropdown" class="menu-dropdown hidden">
+                        <!-- Menu per Master -->
+                        <div class="menu-section master-only">
+                            <div class="menu-section-title">👑 Amministrazione</div>
+                            <div class="menu-item" data-action="manage-users">👥 Gestione Utenti</div>
+                            <div class="menu-item" data-action="export-operai">📤 Export Dipendenti</div>
+                            <div class="menu-item" data-action="import-operai">📥 Import Dipendenti</div>
+                            <div class="menu-separator"></div>
+                        </div>
+                        
+                        <!-- Menu per tutti -->
                         <div class="menu-item" data-action="focus-search-operai">🔍 Cerca Operai</div>
                         <div class="menu-item" data-action="focus-search-cantieri">🔍 Cerca Cantieri</div>
                         <div class="menu-separator"></div>
@@ -45,9 +75,15 @@
                         <div class="menu-item" data-action="export-data">💾 Esporta Dati</div>
                         <div class="menu-item" data-action="import-data">📂 Importa Dati</div>
                         <div class="menu-separator"></div>
-                        <div class="menu-item" data-action="open-settings">📧 Impostazioni Email</div>
-                        <div class="menu-item" data-action="open-general-settings">⚙️ Impostazioni Generali</div>
-                        <div class="menu-separator"></div>
+                        
+                        <!-- Menu solo per Master -->
+                        <div class="menu-section master-only">
+                            <div class="menu-section-title">⚙️ Configurazione</div>
+                            <div class="menu-item" data-action="open-settings">📧 Impostazioni Email</div>
+                            <div class="menu-item" data-action="open-general-settings">⚙️ Impostazioni Generali</div>
+                            <div class="menu-separator"></div>
+                        </div>
+                        
                         <div class="menu-item" data-action="show-info">ℹ️ Informazioni</div>
                         <div class="menu-separator"></div>
                         <div class="menu-item" data-action="logout">🚪 Logout</div>
@@ -251,6 +287,77 @@
             <div class="modal-actions">
                 <button id="close-cantiere-details" class="btn btn-primary">✅ Chiudi</button>
             </div>
+        </div>
+    </div>
+
+    <!-- MODAL GESTIONE UTENTI -->
+    <div id="modal-users" class="modal hidden">
+        <div class="modal-content modal-large">
+            <h3>👥 Gestione Utenti</h3>
+            
+            <div class="users-controls">
+                <button id="add-user-btn" class="btn btn-primary">➕ Aggiungi Utente</button>
+            </div>
+            
+            <div class="users-list">
+                <table class="users-table">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Tipo</th>
+                            <th>Operaio Associato</th>
+                            <th>Ultimo Accesso</th>
+                            <th>Azioni</th>
+                        </tr>
+                    </thead>
+                    <tbody id="users-table-body">
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="modal-actions">
+                <button id="close-users" class="btn btn-primary">✅ Chiudi</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL AGGIUNGI/MODIFICA UTENTE -->
+    <div id="modal-user-form" class="modal hidden">
+        <div class="modal-content">
+            <h3 id="modal-user-title">Aggiungi Utente</h3>
+            <form id="form-user">
+                <input type="hidden" id="user-id">
+                
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" id="user-username" class="form-control" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="user-password" class="form-control" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Tipo Utente</label>
+                    <select id="user-type" class="form-control" required>
+                        <option value="operaio">Operaio</option>
+                        <option value="manager">Manager</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Associa a Operaio (opzionale)</label>
+                    <select id="user-operaio" class="form-control">
+                        <option value="">Nessuna associazione</option>
+                    </select>
+                </div>
+                
+                <div class="modal-actions">
+                    <button type="button" id="cancel-user" class="btn btn-secondary">❌ Annulla</button>
+                    <button type="submit" class="btn btn-primary">💾 Salva</button>
+                </div>
+            </form>
         </div>
     </div>
 
