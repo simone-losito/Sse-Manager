@@ -1,5 +1,5 @@
-// app.js - Sse Manager Ver 1.6.4 - COMPLETO E FUNZIONANTE
-console.log('🏗️ Sse Manager - Caricamento Ver 1.6.4...');
+// app.js - Sse Manager Ver 1.6.4 - COMPLETO CON SINCRONIZZAZIONE BIDIREZIONALE
+console.log('🏗️ Sse Manager - Caricamento Ver 1.6.4 COMPLETO...');
 
 class SseManager {
     constructor() {
@@ -33,11 +33,14 @@ class SseManager {
         this.selectedDate = null;
         this.calendarAssignments = {};
 
+        // Flag per controllo sincronizzazione
+        this.syncInProgress = false;
+
         this.init();
     }
 
     async init() {
-        console.log('🚀 Inizializzazione Sse Manager Ver 1.6.4');
+        console.log('🚀 Inizializzazione Sse Manager Ver 1.6.4 COMPLETO');
         
         // Carica configurazione Supabase
         await this.loadSupabaseConfig();
@@ -45,10 +48,10 @@ class SseManager {
         // Se Supabase è configurato, carica i dati dal database
         if (this.supabaseConfigured) {
             try {
-                await this.loadDataFromSupabase();
-                console.log('✅ Dati caricati da Supabase');
+                await this.syncFromDatabase();
+                console.log('✅ Dati sincronizzati da Supabase');
             } catch (error) {
-                console.error('❌ Errore nel caricamento da Supabase:', error);
+                console.error('❌ Errore nella sincronizzazione da Supabase:', error);
                 // Fallback ai dati locali
                 this.loadDefaultData();
             }
@@ -102,65 +105,215 @@ class SseManager {
         }
     }
 
-    async loadDataFromSupabase() {
+    // ===== SINCRONIZZAZIONE BIDIREZIONALE =====
+    async syncFromDatabase() {
         if (!this.supabaseConfigured) return;
 
+        console.log('🔄 Sincronizzazione FROM database...');
+        
         try {
-            // Carica operai
+            // Carica operai dal database
             const { data: operaiData, error: operaiError } = await this.supabase
                 .from('operai')
-                .select('*');
+                .select('*')
+                .order('id');
             
-            if (!operaiError && operaiData) {
-                this.operai = operaiData.map(operaio => ({
-                    ...operaio,
-                    cantiere: operaio.cantiere_id
-                }));
-            }
+            if (operaiError) throw operaiError;
 
-            // Carica cantieri
+            // Carica cantieri dal database
             const { data: cantieriData, error: cantieriError } = await this.supabase
                 .from('cantieri')
+                .select('*')
+                .order('id');
+            
+            if (cantieriError) throw cantieriError;
+
+            // Carica assegnazioni
+            const { data: assegnazioniData, error: assegnazioniError } = await this.supabase
+                .from('assegnazione_operai')
                 .select('*');
             
-            if (!cantieriError && cantieriData) {
-                this.cantieri = cantieriData.map(cantiere => ({
-                    id: cantiere.id,
-                    nome: cantiere.nome,
-                    indirizzo: cantiere.indirizzo,
-                    tipo: cantiere.tipo,
-                    x: cantiere.coordinate_x,
-                    y: cantiere.coordinate_y,
-                    operai: [],
-                    calendarSelections: {},
-                    timeSlot: {
-                        start: cantiere.time_slot_start || "08:00",
-                        end: cantiere.time_slot_end || "17:00"
-                    }
-                }));
+            if (assegnazioniError) throw assegnazioniError;
 
-                // Carica assegnazioni operai
-                const { data: assegnazioniData, error: assegnazioniError } = await this.supabase
-                    .from('assegnazione_operai')
-                    .select('*');
-                
-                if (!assegnazioniError && assegnazioniData) {
-                    assegnazioniData.forEach(assegnazione => {
-                        const cantiere = this.cantieri.find(c => c.id === assegnazione.cantiere_id);
-                        if (cantiere && !cantiere.operai.includes(assegnazione.operaio_id)) {
-                            cantiere.operai.push(assegnazione.operaio_id);
-                        }
-                        
-                        const operaio = this.operai.find(o => o.id === assegnazione.operaio_id);
-                        if (operaio) {
-                            operaio.cantiere = assegnazione.cantiere_id;
-                        }
-                    });
+            // Sincronizzazione bidirezionale
+            await this.mergeData(operaiData, cantieriData, assegnazioniData);
+            
+        } catch (error) {
+            console.error('Errore nella sincronizzazione dal database:', error);
+            throw error;
+        }
+    }
+
+    async mergeData(dbOperai, dbCantieri, dbAssegnazioni) {
+        console.log('🔄 Unione dati locali e database...');
+        
+        // Per operai: unisci dati database con modifiche locali non sincronizzate
+        const operaiUnificati = await this.mergeOperai(dbOperai || []);
+        const cantieriUnificati = await this.mergeCantieri(dbCantieri || []);
+        
+        // Aggiorna le strutture dati principali
+        this.operai = operaiUnificati;
+        this.cantieri = cantieriUnificati;
+        
+        // Ricostruisci le assegnazioni
+        await this.rebuildAssegnazioni(dbAssegnazioni || []);
+        
+        console.log('✅ Unione dati completata:', {
+            operai: this.operai.length,
+            cantieri: this.cantieri.length
+        });
+    }
+
+    async mergeOperai(dbOperai) {
+        const operaiLocali = this.loadData('operai') || [];
+        const operaiUnificati = [...dbOperai];
+        
+        // Trova il massimo ID nel database per evitare conflitti
+        const maxDbId = dbOperai.length > 0 ? Math.max(...dbOperai.map(o => o.id)) : 0;
+        
+        // Aggiungi operai locali che non sono nel database (nuovi operai creati localmente)
+        operaiLocali.forEach(operaioLocale => {
+            const existsInDb = dbOperai.some(dbOp => dbOp.id === operaioLocale.id);
+            if (!existsInDb) {
+                // Assegna un nuovo ID che non confligga con il database
+                const newId = maxDbId + operaioLocale.id;
+                operaiUnificati.push({
+                    ...operaioLocale,
+                    id: newId,
+                    needsSync: true // Flag per indicare che deve essere salvato nel DB
+                });
+            }
+        });
+        
+        return operaiUnificati;
+    }
+
+    async mergeCantieri(dbCantieri) {
+        const cantieriLocali = this.loadData('cantieri') || [];
+        const cantieriUnificati = [...dbCantieri];
+        
+        // Trova il massimo ID nel database
+        const maxDbId = dbCantieri.length > 0 ? Math.max(...dbCantieri.map(c => c.id)) : 0;
+        
+        // Aggiungi cantieri locali che non sono nel database
+        cantieriLocali.forEach(cantiereLocale => {
+            const existsInDb = dbCantieri.some(dbCat => dbCat.id === cantiereLocale.id);
+            if (!existsInDb) {
+                const newId = maxDbId + cantiereLocale.id;
+                cantieriUnificati.push({
+                    ...cantiereLocale,
+                    id: newId,
+                    needsSync: true
+                });
+            }
+        });
+        
+        return cantieriUnificati;
+    }
+
+    async rebuildAssegnazioni(dbAssegnazioni) {
+        // Reset di tutte le assegnazioni
+        this.operai.forEach(operaio => {
+            operaio.cantiere = null;
+            operaio.cantiere_id = null;
+        });
+        
+        this.cantieri.forEach(cantiere => {
+            cantiere.operai = [];
+        });
+        
+        // Ricostruisci dalle assegnazioni del database
+        dbAssegnazioni.forEach(assegnazione => {
+            const operaio = this.operai.find(o => o.id === assegnazione.operaio_id);
+            const cantiere = this.cantieri.find(c => c.id === assegnazione.cantiere_id);
+            
+            if (operaio && cantiere) {
+                operaio.cantiere = cantiere.id;
+                operaio.cantiere_id = cantiere.id;
+                if (!cantiere.operai.includes(operaio.id)) {
+                    cantiere.operai.push(operaio.id);
                 }
             }
+        });
+    }
 
+    // ===== SALVATAGGIO AUTOMATICO SU DATABASE =====
+    async autoSaveToDatabase() {
+        if (!this.supabaseConfigured || this.syncInProgress) return;
+        
+        try {
+            console.log('💾 Salvataggio automatico su database...');
+            await this.syncToDatabase();
         } catch (error) {
-            console.error('Errore nel caricamento dati Supabase:', error);
+            console.error('❌ Errore nel salvataggio automatico:', error);
+        }
+    }
+
+    async syncToDatabase() {
+        if (!this.supabaseConfigured) return;
+        
+        this.syncInProgress = true;
+        console.log('🔄 Sincronizzazione TO database...');
+        
+        try {
+            // Salva operai
+            for (const operaio of this.operai) {
+                await this.saveOperaioToSupabase(operaio);
+            }
+            
+            // Salva cantieri
+            for (const cantiere of this.cantieri) {
+                await this.saveCantiereToSupabase(cantiere);
+            }
+            
+            // Salva assegnazioni
+            await this.saveAllAssegnazioni();
+            
+            console.log('✅ Sincronizzazione su database completata');
+            
+        } catch (error) {
+            console.error('❌ Errore nella sincronizzazione su database:', error);
+            throw error;
+        } finally {
+            this.syncInProgress = false;
+        }
+    }
+
+    async saveAllAssegnazioni() {
+        if (!this.supabaseConfigured) return;
+        
+        try {
+            // Prima cancella tutte le assegnazioni esistenti
+            const { error: deleteError } = await this.supabase
+                .from('assegnazione_operai')
+                .delete()
+                .neq('id', 0); // Cancella tutto
+            
+            if (deleteError) throw deleteError;
+            
+            // Poi ricrea tutte le assegnazioni attuali
+            const assegnazioni = [];
+            
+            this.cantieri.forEach(cantiere => {
+                cantiere.operai.forEach(operaioId => {
+                    assegnazioni.push({
+                        operaio_id: operaioId,
+                        cantiere_id: cantiere.id,
+                        created_at: new Date().toISOString()
+                    });
+                });
+            });
+            
+            if (assegnazioni.length > 0) {
+                const { error: insertError } = await this.supabase
+                    .from('assegnazione_operai')
+                    .insert(assegnazioni);
+                
+                if (insertError) throw insertError;
+            }
+            
+        } catch (error) {
+            console.error('Errore nel salvataggio assegnazioni:', error);
             throw error;
         }
     }
@@ -722,28 +875,39 @@ class SseManager {
         };
 
         let operaio;
+        let isNew = false;
 
         if (id) {
             operaio = this.operai.find(o => o.id == id);
             if (operaio) {
                 Object.assign(operaio, {
                     nome, email, telefono, specializzazione, livello, preposto,
-                    avatar: avatarMap[specializzazione] || '👷'
+                    avatar: avatarMap[specializzazione] || '👷',
+                    updated_at: new Date().toISOString()
                 });
             }
         } else {
             const newId = Math.max(0, ...this.operai.map(o => o.id)) + 1;
             operaio = {
                 id: newId, nome, email, telefono, specializzazione, livello, 
-                cantiere: null, avatar: avatarMap[specializzazione] || '👷', preposto
+                cantiere: null, avatar: avatarMap[specializzazione] || '👷', preposto,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+                needsSync: true // Flag per sincronizzazione
             };
             this.operai.push(operaio);
+            isNew = true;
         }
         
-        // Salva su Supabase se configurato
+        // Salva SEMPRE su Supabase se configurato
         if (this.supabaseConfigured) {
             try {
                 await this.saveOperaioToSupabase(operaio);
+                // Rimuovi il flag dopo il salvataggio
+                if (operaio.needsSync) {
+                    delete operaio.needsSync;
+                }
+                console.log(`✅ Operaio ${isNew ? 'creato' : 'aggiornato'} sul database`);
             } catch (error) {
                 console.error('Errore nel salvataggio su Supabase:', error);
                 alert('⚠️ Operaio salvato localmente, ma errore nel salvataggio sul database');
@@ -753,7 +917,7 @@ class SseManager {
         this.closeModal('modal-operaio');
         this.renderApp();
         this.saveAllData();
-        alert('✅ Operaio salvato con successo');
+        alert('✅ Operaio salvato con successo' + (this.supabaseConfigured ? ' e sincronizzato con il database' : ''));
     }
 
     async removeOperaio(operaioId) {
@@ -773,10 +937,11 @@ class SseManager {
                 this.operai.splice(index, 1);
             }
             
-            // Elimina da Supabase se configurato
+            // Elimina SEMPRE da Supabase se configurato
             if (this.supabaseConfigured) {
                 try {
                     await this.deleteOperaioFromSupabase(operaioId);
+                    console.log('✅ Operaio eliminato dal database');
                 } catch (error) {
                     console.error('Errore nell\'eliminazione da Supabase:', error);
                     alert('⚠️ Operaio eliminato localmente, ma errore nell\'eliminazione dal database');
@@ -785,7 +950,7 @@ class SseManager {
             
             this.renderApp();
             this.saveAllData();
-            alert('✅ Operaio eliminato');
+            alert('✅ Operaio eliminato' + (this.supabaseConfigured ? ' dal database' : ''));
         }
     }
 
@@ -860,6 +1025,10 @@ class SseManager {
                         this.draggedCantiere.y = finalY;
                         
                         this.saveAllData();
+                        // Salva anche su database
+                        if (this.supabaseConfigured) {
+                            this.saveCantiereToSupabase(this.draggedCantiere);
+                        }
                     }
                     
                     this.draggedCantiere = null;
@@ -981,6 +1150,11 @@ class SseManager {
         this.renderApp();
         this.saveAllData();
         
+        // Salva su database
+        if (this.supabaseConfigured) {
+            this.saveAssegnazioneToSupabase(operaioId, null);
+        }
+        
         // Mostra feedback
         const successMsg = document.createElement('div');
         successMsg.style.cssText = `
@@ -1052,6 +1226,7 @@ class SseManager {
         }
         
         let cantiere;
+        let isNew = false;
 
         if (id) {
             cantiere = this.cantieri.find(c => c.id == id);
@@ -1059,21 +1234,30 @@ class SseManager {
                 cantiere.nome = nome;
                 cantiere.indirizzo = indirizzo;
                 cantiere.tipo = tipo;
+                cantiere.updated_at = new Date().toISOString();
             }
         } else {
             const newId = Math.max(0, ...this.cantieri.map(c => c.id)) + 1;
             cantiere = {
                 id: newId, nome, indirizzo, tipo,
                 x: Math.random() * 400 + 100, y: Math.random() * 300 + 100,
-                operai: [], calendarSelections: {}, timeSlot: {start: "08:00", end: "17:00"}
+                operai: [], calendarSelections: {}, timeSlot: {start: "08:00", end: "17:00"},
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+                needsSync: true
             };
             this.cantieri.push(cantiere);
+            isNew = true;
         }
         
-        // Salva su Supabase se configurato
+        // Salva SEMPRE su Supabase se configurato
         if (this.supabaseConfigured) {
             try {
                 await this.saveCantiereToSupabase(cantiere);
+                if (cantiere.needsSync) {
+                    delete cantiere.needsSync;
+                }
+                console.log(`✅ Cantiere ${isNew ? 'creato' : 'aggiornato'} sul database`);
             } catch (error) {
                 console.error('Errore nel salvataggio su Supabase:', error);
                 alert('⚠️ Cantiere salvato localmente, ma errore nel salvataggio sul database');
@@ -1083,7 +1267,7 @@ class SseManager {
         this.closeModal('modal-cantiere');
         this.renderCantieri();
         this.saveAllData();
-        alert('✅ Cantiere salvato con successo');
+        alert('✅ Cantiere salvato con successo' + (this.supabaseConfigured ? ' e sincronizzato con il database' : ''));
     }
 
     async removeCantiere(cantiereId) {
@@ -1093,16 +1277,20 @@ class SseManager {
         if (confirm(`Sei sicuro di voler eliminare il cantiere "${cantiere.nome}"?`)) {
             cantiere.operai.forEach(operaioId => {
                 const operaio = this.operai.find(o => o.id === operaioId);
-                if (operaio) operaio.cantiere = null;
+                if (operaio) {
+                    operaio.cantiere = null;
+                    operaio.cantiere_id = null;
+                }
             });
             
             const index = this.cantieri.findIndex(c => c.id === cantiereId);
             if (index !== -1) this.cantieri.splice(index, 1);
             
-            // Elimina da Supabase se configurato
+            // Elimina SEMPRE da Supabase se configurato
             if (this.supabaseConfigured) {
                 try {
                     await this.deleteCantiereFromSupabase(cantiereId);
+                    console.log('✅ Cantiere eliminato dal database');
                 } catch (error) {
                     console.error('Errore nell\'eliminazione da Supabase:', error);
                     alert('⚠️ Cantiere eliminato localmente, ma errore nell\'eliminazione dal database');
@@ -1111,7 +1299,7 @@ class SseManager {
             
             this.renderApp();
             this.saveAllData();
-            alert('✅ Cantiere eliminato');
+            alert('✅ Cantiere eliminato' + (this.supabaseConfigured ? ' dal database' : ''));
         }
     }
 
@@ -1130,14 +1318,16 @@ class SseManager {
         
         // Assegna al nuovo cantiere
         operaio.cantiere = cantiereId;
+        operaio.cantiere_id = cantiereId;
         if (!cantiere.operai.includes(operaioId)) {
             cantiere.operai.push(operaioId);
         }
         
-        // Salva su Supabase se configurato
+        // Salva SEMPRE l'assegnazione su Supabase
         if (this.supabaseConfigured) {
             try {
                 await this.saveAssegnazioneToSupabase(operaioId, cantiereId);
+                console.log('✅ Assegnazione salvata sul database');
             } catch (error) {
                 console.error('Errore nel salvataggio assegnazione su Supabase:', error);
             }
@@ -1214,11 +1404,17 @@ class SseManager {
         document.getElementById('time-start').onchange = (e) => {
             cantiere.timeSlot.start = e.target.value;
             this.saveAllData();
+            if (this.supabaseConfigured) {
+                this.saveCantiereToSupabase(cantiere);
+            }
         };
         
         document.getElementById('time-end').onchange = (e) => {
             cantiere.timeSlot.end = e.target.value;
             this.saveAllData();
+            if (this.supabaseConfigured) {
+                this.saveCantiereToSupabase(cantiere);
+            }
         };
 
         this.showModal('modal-cantiere-details');
@@ -1234,6 +1430,11 @@ class SseManager {
         
         this.renderApp();
         this.saveAllData();
+        
+        // Salva su database
+        if (this.supabaseConfigured) {
+            this.saveAssegnazioneToSupabase(operaioId, null);
+        }
         
         if (this.currentCantiereId === cantiereId) {
             this.showCantiereDetails(cantiereId);
@@ -1895,9 +2096,12 @@ class SseManager {
         }
 
         try {
-            await this.loadDataFromSupabase();
+            // Sincronizzazione bidirezionale
+            await this.syncToDatabase(); // Prima salva le modifiche locali
+            await this.syncFromDatabase(); // Poi carica eventuali modifiche esterne
+            
             this.renderApp();
-            alert('✅ Sincronizzazione con database completata');
+            alert('✅ Sincronizzazione bidirezionale completata!');
         } catch (error) {
             console.error('Errore nella sincronizzazione:', error);
             alert('❌ Errore nella sincronizzazione con il database');
@@ -2015,7 +2219,9 @@ class SseManager {
         if (this.autoSaveEnabled) {
             setInterval(() => {
                 this.saveAllData();
-            }, 30000);
+                // Salvataggio automatico su database
+                this.autoSaveToDatabase();
+            }, 30000); // Salva ogni 30 secondi
         }
     }
 
@@ -2160,6 +2366,19 @@ style.textContent = `
         display: flex;
         gap: 10px;
         flex-wrap: wrap;
+    }
+
+    /* Indicatore sincronizzazione */
+    .sync-status {
+        position: fixed;
+        bottom: 10px;
+        right: 10px;
+        background: var(--color-success);
+        color: white;
+        padding: 5px 10px;
+        border-radius: var(--radius-sm);
+        font-size: 12px;
+        z-index: 1000;
     }
 `;
 document.head.appendChild(style);
