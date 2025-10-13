@@ -1,23 +1,15 @@
-// app.js - Sse Manager Ver 1.6.3 - COMPLETO E FUNZIONANTE
-console.log('🏗️ Sse Manager - Caricamento Ver 1.6.3...');
+// app.js - Sse Manager Ver 1.6.4 - COMPLETO E FUNZIONANTE
+console.log('🏗️ Sse Manager - Caricamento Ver 1.6.4...');
 
 class SseManager {
     constructor() {
-        this.operai = this.loadData('operai') || [
-            {id: 1, nome: "Marco Rossi", email: "marco.rossi@standardse.it", telefono: "333-1234567", specializzazione: "Elettricista", livello: 5, cantiere: 1, avatar: "⚡", preposto: true},
-            {id: 2, nome: "Giuseppe Bianchi", email: "giuseppe.bianchi@standardse.it", telefono: "335-2345678", specializzazione: "Meccanico", livello: 4, cantiere: 1, avatar: "🔧", preposto: false},
-            {id: 3, nome: "Antonio Verde", email: "antonio.verde@standardse.it", telefono: "338-3456789", specializzazione: "Elettricista", livello: 3, cantiere: 2, avatar: "⚡", preposto: false},
-            {id: 4, nome: "Francesco Neri", email: "francesco.neri@standardse.it", telefono: "339-4567890", specializzazione: "Meccanico", livello: 5, cantiere: 2, avatar: "🔧", preposto: true},
-            {id: 5, nome: "Luigi Viola", email: "luigi.viola@standardse.it", telefono: "340-5678901", specializzazione: "Elettricista", livello: 2, cantiere: null, avatar: "⚡", preposto: false},
-            {id: 6, nome: "Salvatore Blu", email: "salvatore.blu@standardse.it", telefono: "346-6789012", specializzazione: "Meccanico", livello: 3, cantiere: null, avatar: "🔧", preposto: false}
-        ];
-
-        this.cantieri = this.loadData('cantieri') || [
-            {id: 1, nome: "Palazzo Roma Centro", indirizzo: "Via Roma 123, Roma", tipo: "Civile", x: 150, y: 200, operai: [1, 2], calendarSelections: {}, timeSlot: {start: "08:00", end: "17:00"}},
-            {id: 2, nome: "Impianto Industriale Ostia", indirizzo: "Via del Mare 45, Ostia", tipo: "Industriale", x: 400, y: 300, operai: [4, 3], calendarSelections: {}, timeSlot: {start: "07:00", end: "16:00"}},
-            {id: 3, nome: "Ristrutturazione Trastevere", indirizzo: "Viale Trastevere 78, Roma", tipo: "Residenziale", x: 300, y: 150, operai: [], calendarSelections: {}, timeSlot: {start: "08:30", end: "17:30"}}
-        ];
-
+        // Configurazione Supabase
+        this.supabase = null;
+        this.supabaseConfigured = false;
+        
+        // Carica dati locali come fallback
+        this.operai = this.loadData('operai') || [];
+        this.cantieri = this.loadData('cantieri') || [];
         this.users = this.loadData('users') || [
             {id: 1, username: 'master', password: 'Sse19731973!', type: 'master', operaioId: null, lastLogin: null},
             {id: 2, username: 'marco.rossi', password: 'password123', type: 'operaio', operaioId: 1, lastLogin: null},
@@ -37,16 +29,290 @@ class SseManager {
         this.dragOffsetX = 0;
         this.dragOffsetY = 0;
 
+        // Nuove variabili per calendario avanzato
+        this.selectedDate = null;
+        this.calendarAssignments = {};
+
         this.init();
     }
 
-    init() {
-        console.log('🚀 Inizializzazione Sse Manager Ver 1.6.3');
+    async init() {
+        console.log('🚀 Inizializzazione Sse Manager Ver 1.6.4');
+        
+        // Carica configurazione Supabase
+        await this.loadSupabaseConfig();
+        
+        // Se Supabase è configurato, carica i dati dal database
+        if (this.supabaseConfigured) {
+            try {
+                await this.loadDataFromSupabase();
+                console.log('✅ Dati caricati da Supabase');
+            } catch (error) {
+                console.error('❌ Errore nel caricamento da Supabase:', error);
+                // Fallback ai dati locali
+                this.loadDefaultData();
+            }
+        } else {
+            this.loadDefaultData();
+        }
+        
         this.setupEventListeners();
         this.updateStats();
         this.setupAutoSave();
     }
 
+    loadDefaultData() {
+        if (this.operai.length === 0) {
+            this.operai = [
+                {id: 1, nome: "Marco Rossi", email: "marco.rossi@standardse.it", telefono: "333-1234567", specializzazione: "Elettricista", livello: 5, cantiere: 1, avatar: "⚡", preposto: true},
+                {id: 2, nome: "Giuseppe Bianchi", email: "giuseppe.bianchi@standardse.it", telefono: "335-2345678", specializzazione: "Meccanico", livello: 4, cantiere: 1, avatar: "🔧", preposto: false},
+                {id: 3, nome: "Antonio Verde", email: "antonio.verde@standardse.it", telefono: "338-3456789", specializzazione: "Elettricista", livello: 3, cantiere: 2, avatar: "⚡", preposto: false},
+                {id: 4, nome: "Francesco Neri", email: "francesco.neri@standardse.it", telefono: "339-4567890", specializzazione: "Meccanico", livello: 5, cantiere: 2, avatar: "🔧", preposto: true},
+                {id: 5, nome: "Luigi Viola", email: "luigi.viola@standardse.it", telefono: "340-5678901", specializzazione: "Elettricista", livello: 2, cantiere: null, avatar: "⚡", preposto: false},
+                {id: 6, nome: "Salvatore Blu", email: "salvatore.blu@standardse.it", telefono: "346-6789012", specializzazione: "Meccanico", livello: 3, cantiere: null, avatar: "🔧", preposto: false}
+            ];
+        }
+
+        if (this.cantieri.length === 0) {
+            this.cantieri = [
+                {id: 1, nome: "Palazzo Roma Centro", indirizzo: "Via Roma 123, Roma", tipo: "Civile", x: 150, y: 200, operai: [1, 2], calendarSelections: {}, timeSlot: {start: "08:00", end: "17:00"}},
+                {id: 2, nome: "Impianto Industriale Ostia", indirizzo: "Via del Mare 45, Ostia", tipo: "Industriale", x: 400, y: 300, operai: [4, 3], calendarSelections: {}, timeSlot: {start: "07:00", end: "16:00"}},
+                {id: 3, nome: "Ristrutturazione Trastevere", indirizzo: "Viale Trastevere 78, Roma", tipo: "Residenziale", x: 300, y: 150, operai: [], calendarSelections: {}, timeSlot: {start: "08:30", end: "17:30"}}
+            ];
+        }
+    }
+
+    // ===== GESTIONE SUPABASE =====
+    async loadSupabaseConfig() {
+        const config = this.loadData('supabase_config');
+        if (config && config.url && config.key) {
+            try {
+                // Carica dinamicamente Supabase
+                const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm');
+                this.supabase = createClient(config.url, config.key);
+                this.supabaseConfigured = true;
+                console.log('✅ Supabase configurato');
+            } catch (error) {
+                console.error('❌ Errore nel caricamento Supabase:', error);
+                this.supabaseConfigured = false;
+            }
+        } else {
+            console.log('ℹ️ Supabase non configurato');
+            this.supabaseConfigured = false;
+        }
+    }
+
+    async loadDataFromSupabase() {
+        if (!this.supabaseConfigured) return;
+
+        try {
+            // Carica operai
+            const { data: operaiData, error: operaiError } = await this.supabase
+                .from('operai')
+                .select('*');
+            
+            if (!operaiError && operaiData) {
+                this.operai = operaiData.map(operaio => ({
+                    ...operaio,
+                    cantiere: operaio.cantiere_id
+                }));
+            }
+
+            // Carica cantieri
+            const { data: cantieriData, error: cantieriError } = await this.supabase
+                .from('cantieri')
+                .select('*');
+            
+            if (!cantieriError && cantieriData) {
+                this.cantieri = cantieriData.map(cantiere => ({
+                    id: cantiere.id,
+                    nome: cantiere.nome,
+                    indirizzo: cantiere.indirizzo,
+                    tipo: cantiere.tipo,
+                    x: cantiere.coordinate_x,
+                    y: cantiere.coordinate_y,
+                    operai: [],
+                    calendarSelections: {},
+                    timeSlot: {
+                        start: cantiere.time_slot_start || "08:00",
+                        end: cantiere.time_slot_end || "17:00"
+                    }
+                }));
+
+                // Carica assegnazioni operai
+                const { data: assegnazioniData, error: assegnazioniError } = await this.supabase
+                    .from('assegnazione_operai')
+                    .select('*');
+                
+                if (!assegnazioniError && assegnazioniData) {
+                    assegnazioniData.forEach(assegnazione => {
+                        const cantiere = this.cantieri.find(c => c.id === assegnazione.cantiere_id);
+                        if (cantiere && !cantiere.operai.includes(assegnazione.operaio_id)) {
+                            cantiere.operai.push(assegnazione.operaio_id);
+                        }
+                        
+                        const operaio = this.operai.find(o => o.id === assegnazione.operaio_id);
+                        if (operaio) {
+                            operaio.cantiere = assegnazione.cantiere_id;
+                        }
+                    });
+                }
+            }
+
+        } catch (error) {
+            console.error('Errore nel caricamento dati Supabase:', error);
+            throw error;
+        }
+    }
+
+    async saveOperaioToSupabase(operaio) {
+        if (!this.supabaseConfigured) return;
+
+        try {
+            const operaioData = {
+                nome: operaio.nome,
+                email: operaio.email,
+                telefono: operaio.telefono,
+                specializzazione: operaio.specializzazione,
+                livello: operaio.livello,
+                cantiere_id: operaio.cantiere,
+                avatar: operaio.avatar,
+                preposto: operaio.preposto,
+                updated_at: new Date().toISOString()
+            };
+
+            if (operaio.id) {
+                // Update
+                const { error } = await this.supabase
+                    .from('operai')
+                    .update(operaioData)
+                    .eq('id', operaio.id);
+                
+                if (error) throw error;
+            } else {
+                // Insert
+                operaioData.created_at = new Date().toISOString();
+                const { data, error } = await this.supabase
+                    .from('operai')
+                    .insert([operaioData])
+                    .select();
+                
+                if (error) throw error;
+                if (data && data[0]) {
+                    operaio.id = data[0].id;
+                }
+            }
+        } catch (error) {
+            console.error('Errore nel salvataggio operaio su Supabase:', error);
+            throw error;
+        }
+    }
+
+    async saveCantiereToSupabase(cantiere) {
+        if (!this.supabaseConfigured) return;
+
+        try {
+            const cantiereData = {
+                nome: cantiere.nome,
+                indirizzo: cantiere.indirizzo,
+                tipo: cantiere.tipo,
+                coordinate_x: cantiere.x,
+                coordinate_y: cantiere.y,
+                time_slot_start: cantiere.timeSlot?.start || "08:00",
+                time_slot_end: cantiere.timeSlot?.end || "17:00",
+                updated_at: new Date().toISOString()
+            };
+
+            if (cantiere.id) {
+                // Update
+                const { error } = await this.supabase
+                    .from('cantieri')
+                    .update(cantiereData)
+                    .eq('id', cantiere.id);
+                
+                if (error) throw error;
+            } else {
+                // Insert
+                cantiereData.created_at = new Date().toISOString();
+                const { data, error } = await this.supabase
+                    .from('cantieri')
+                    .insert([cantiereData])
+                    .select();
+                
+                if (error) throw error;
+                if (data && data[0]) {
+                    cantiere.id = data[0].id;
+                }
+            }
+        } catch (error) {
+            console.error('Errore nel salvataggio cantiere su Supabase:', error);
+            throw error;
+        }
+    }
+
+    async saveAssegnazioneToSupabase(operaioId, cantiereId) {
+        if (!this.supabaseConfigured) return;
+
+        try {
+            // Rimuovi assegnazioni precedenti per questo operaio
+            const { error: deleteError } = await this.supabase
+                .from('assegnazione_operai')
+                .delete()
+                .eq('operaio_id', operaioId);
+            
+            if (deleteError) throw deleteError;
+
+            // Se cantiereId non è null, crea nuova assegnazione
+            if (cantiereId) {
+                const { error: insertError } = await this.supabase
+                    .from('assegnazione_operai')
+                    .insert([{
+                        operaio_id: operaioId,
+                        cantiere_id: cantiereId,
+                        created_at: new Date().toISOString()
+                    }]);
+                
+                if (insertError) throw insertError;
+            }
+        } catch (error) {
+            console.error('Errore nel salvataggio assegnazione su Supabase:', error);
+            throw error;
+        }
+    }
+
+    async deleteOperaioFromSupabase(operaioId) {
+        if (!this.supabaseConfigured) return;
+
+        try {
+            const { error } = await this.supabase
+                .from('operai')
+                .delete()
+                .eq('id', operaioId);
+            
+            if (error) throw error;
+        } catch (error) {
+            console.error('Errore nell\'eliminazione operaio da Supabase:', error);
+            throw error;
+        }
+    }
+
+    async deleteCantiereFromSupabase(cantiereId) {
+        if (!this.supabaseConfigured) return;
+
+        try {
+            const { error } = await this.supabase
+                .from('cantieri')
+                .delete()
+                .eq('id', cantiereId);
+            
+            if (error) throw error;
+        } catch (error) {
+            console.error('Errore nell\'eliminazione cantiere da Supabase:', error);
+            throw error;
+        }
+    }
+
+    // ===== GESTIONE EVENTI =====
     setupEventListeners() {
         // Login
         document.getElementById('login-btn').addEventListener('click', () => this.login());
@@ -170,6 +436,9 @@ class SseManager {
             case 'open-general-settings':
                 this.showSettings('general');
                 break;
+            case 'open-database-settings':
+                this.showSettings('database');
+                break;
             case 'export-operai':
                 this.exportOperaiCSV();
                 break;
@@ -193,6 +462,9 @@ class SseManager {
                 break;
             case 'import-data':
                 this.importData();
+                break;
+            case 'sync-database':
+                this.syncWithDatabase();
                 break;
             default:
                 console.warn('Azione menu non gestita:', action);
@@ -429,7 +701,7 @@ class SseManager {
         this.showModal('modal-operaio');
     }
 
-    saveOperaio() {
+    async saveOperaio() {
         const id = document.getElementById('operaio-id').value;
         const nome = document.getElementById('operaio-nome').value.trim();
         const email = document.getElementById('operaio-email').value.trim();
@@ -449,8 +721,10 @@ class SseManager {
             'Operatore Macchine': '🚜'
         };
 
+        let operaio;
+
         if (id) {
-            const operaio = this.operai.find(o => o.id == id);
+            operaio = this.operai.find(o => o.id == id);
             if (operaio) {
                 Object.assign(operaio, {
                     nome, email, telefono, specializzazione, livello, preposto,
@@ -459,10 +733,21 @@ class SseManager {
             }
         } else {
             const newId = Math.max(0, ...this.operai.map(o => o.id)) + 1;
-            this.operai.push({
+            operaio = {
                 id: newId, nome, email, telefono, specializzazione, livello, 
                 cantiere: null, avatar: avatarMap[specializzazione] || '👷', preposto
-            });
+            };
+            this.operai.push(operaio);
+        }
+        
+        // Salva su Supabase se configurato
+        if (this.supabaseConfigured) {
+            try {
+                await this.saveOperaioToSupabase(operaio);
+            } catch (error) {
+                console.error('Errore nel salvataggio su Supabase:', error);
+                alert('⚠️ Operaio salvato localmente, ma errore nel salvataggio sul database');
+            }
         }
         
         this.closeModal('modal-operaio');
@@ -471,7 +756,7 @@ class SseManager {
         alert('✅ Operaio salvato con successo');
     }
 
-    removeOperaio(operaioId) {
+    async removeOperaio(operaioId) {
         const operaio = this.operai.find(o => o.id === operaioId);
         if (!operaio) return;
         
@@ -488,13 +773,23 @@ class SseManager {
                 this.operai.splice(index, 1);
             }
             
+            // Elimina da Supabase se configurato
+            if (this.supabaseConfigured) {
+                try {
+                    await this.deleteOperaioFromSupabase(operaioId);
+                } catch (error) {
+                    console.error('Errore nell\'eliminazione da Supabase:', error);
+                    alert('⚠️ Operaio eliminato localmente, ma errore nell\'eliminazione dal database');
+                }
+            }
+            
             this.renderApp();
             this.saveAllData();
             alert('✅ Operaio eliminato');
         }
     }
 
-    // ===== GESTIONE CANTIERI - VERSIONE CORRETTA CON DRAG & DROP =====
+    // ===== GESTIONE CANTIERI =====
     renderCantieri() {
         const container = document.getElementById('map-container');
         const controls = document.getElementById('controls-cantieri');
@@ -523,7 +818,7 @@ class SseManager {
             element.style.top = cantiere.y + 'px';
             element.draggable = (this.currentUser.type === 'manager' || this.currentUser.type === 'master') && this.isDragDropActive;
             
-            // Setup drag per cantiere - VERSIONE CORRETTA
+            // Setup drag per cantiere
             if ((this.currentUser.type === 'manager' || this.currentUser.type === 'master') && this.isDragDropActive) {
                 element.addEventListener('dragstart', (e) => {
                     this.draggedCantiere = cantiere;
@@ -573,7 +868,7 @@ class SseManager {
                 });
             }
 
-            // Setup drop per operai - VERSIONE CORRETTA
+            // Setup drop per operai
             element.addEventListener('dragover', (e) => {
                 e.preventDefault();
                 if (this.draggedOperaio && this.isDragDropActive) {
@@ -588,13 +883,13 @@ class SseManager {
             
             element.addEventListener('drop', (e) => {
                 e.preventDefault();
-                e.stopPropagation(); // IMPORTANTE: previene la propagazione all'evento drop del container
+                e.stopPropagation();
                 element.classList.remove('drag-over');
                 
                 if (this.draggedOperaio && this.isDragDropActive) {
                     this.assignOperaioToCantiere(this.draggedOperaio, cantiere.id);
                     this.showDragSuccess(cantiere);
-                    this.draggedOperaio = null; // Reset dopo l'assegnazione
+                    this.draggedOperaio = null;
                 }
             });
 
@@ -642,12 +937,10 @@ class SseManager {
             e.preventDefault();
             container.classList.remove('drag-over');
             
-            // IMPORTANTE: Controlla se il drop è avvenuto direttamente sul container (non su un cantiere)
             const cantiereElement = e.target.closest('.cantiere');
             if (!cantiereElement && this.draggedOperaio && this.isDragDropActive) {
-                // Solo se droppato sul container (non su un cantiere), rimuovi dal cantiere
                 this.unassignOperaioFromAnyCantiere(this.draggedOperaio);
-                this.draggedOperaio = null; // Reset dopo la rimozione
+                this.draggedOperaio = null;
             }
         });
     }
@@ -675,7 +968,6 @@ class SseManager {
         }, 2000);
     }
 
-    // Nuova funzione per rimuovere operai dai cantieri
     unassignOperaioFromAnyCantiere(operaioId) {
         const operaio = this.operai.find(o => o.id === operaioId);
         if (!operaio || !operaio.cantiere) return;
@@ -748,7 +1040,7 @@ class SseManager {
         this.showModal('modal-cantiere');
     }
 
-    saveCantiere() {
+    async saveCantiere() {
         const id = document.getElementById('cantiere-id').value;
         const nome = document.getElementById('cantiere-nome').value.trim();
         const indirizzo = document.getElementById('cantiere-indirizzo').value.trim();
@@ -759,8 +1051,10 @@ class SseManager {
             return;
         }
         
+        let cantiere;
+
         if (id) {
-            const cantiere = this.cantieri.find(c => c.id == id);
+            cantiere = this.cantieri.find(c => c.id == id);
             if (cantiere) {
                 cantiere.nome = nome;
                 cantiere.indirizzo = indirizzo;
@@ -768,11 +1062,22 @@ class SseManager {
             }
         } else {
             const newId = Math.max(0, ...this.cantieri.map(c => c.id)) + 1;
-            this.cantieri.push({
+            cantiere = {
                 id: newId, nome, indirizzo, tipo,
                 x: Math.random() * 400 + 100, y: Math.random() * 300 + 100,
                 operai: [], calendarSelections: {}, timeSlot: {start: "08:00", end: "17:00"}
-            });
+            };
+            this.cantieri.push(cantiere);
+        }
+        
+        // Salva su Supabase se configurato
+        if (this.supabaseConfigured) {
+            try {
+                await this.saveCantiereToSupabase(cantiere);
+            } catch (error) {
+                console.error('Errore nel salvataggio su Supabase:', error);
+                alert('⚠️ Cantiere salvato localmente, ma errore nel salvataggio sul database');
+            }
         }
         
         this.closeModal('modal-cantiere');
@@ -781,7 +1086,7 @@ class SseManager {
         alert('✅ Cantiere salvato con successo');
     }
 
-    removeCantiere(cantiereId) {
+    async removeCantiere(cantiereId) {
         const cantiere = this.cantieri.find(c => c.id === cantiereId);
         if (!cantiere) return;
         
@@ -794,13 +1099,23 @@ class SseManager {
             const index = this.cantieri.findIndex(c => c.id === cantiereId);
             if (index !== -1) this.cantieri.splice(index, 1);
             
+            // Elimina da Supabase se configurato
+            if (this.supabaseConfigured) {
+                try {
+                    await this.deleteCantiereFromSupabase(cantiereId);
+                } catch (error) {
+                    console.error('Errore nell\'eliminazione da Supabase:', error);
+                    alert('⚠️ Cantiere eliminato localmente, ma errore nell\'eliminazione dal database');
+                }
+            }
+            
             this.renderApp();
             this.saveAllData();
             alert('✅ Cantiere eliminato');
         }
     }
 
-    assignOperaioToCantiere(operaioId, cantiereId) {
+    async assignOperaioToCantiere(operaioId, cantiereId) {
         const operaio = this.operai.find(o => o.id === operaioId);
         const cantiere = this.cantieri.find(c => c.id === cantiereId);
         if (!operaio || !cantiere) return;
@@ -817,6 +1132,15 @@ class SseManager {
         operaio.cantiere = cantiereId;
         if (!cantiere.operai.includes(operaioId)) {
             cantiere.operai.push(operaioId);
+        }
+        
+        // Salva su Supabase se configurato
+        if (this.supabaseConfigured) {
+            try {
+                await this.saveAssegnazioneToSupabase(operaioId, cantiereId);
+            } catch (error) {
+                console.error('Errore nel salvataggio assegnazione su Supabase:', error);
+            }
         }
         
         this.renderApp();
@@ -918,6 +1242,7 @@ class SseManager {
         alert(`✅ ${operaio.nome} rimosso dal cantiere`);
     }
 
+    // ===== CALENDARIO AVANZATO =====
     renderCalendar() {
         if (!this.currentCantiereId) return;
         
@@ -941,12 +1266,19 @@ class SseManager {
             const dayNum = current.getDate();
             const isCurrentMonth = current.getMonth() === this.currentMonth;
             const isSelected = this.isCalendarDaySelected(current);
+            const hasTimeSlots = this.hasTimeSlotsForDate(current, cantiere.id);
             
             let dayClass = 'calendar-day';
             if (!isCurrentMonth) dayClass += ' other-month';
             if (isSelected) dayClass += ' selected';
+            if (hasTimeSlots) dayClass += ' has-slots';
             
-            calendarHtml += `<div class="${dayClass}" data-date="${current.toISOString()}">${dayNum}</div>`;
+            calendarHtml += `
+                <div class="${dayClass}" data-date="${current.toISOString()}">
+                    ${dayNum}
+                    ${hasTimeSlots ? '<div class="time-slots-indicator">⏰</div>' : ''}
+                </div>
+            `;
             current.setDate(current.getDate() + 1);
         }
         
@@ -954,9 +1286,149 @@ class SseManager {
         
         document.querySelectorAll('.calendar-day').forEach(day => {
             day.addEventListener('click', () => {
-                this.toggleCalendarDay(day.dataset.date);
+                this.selectCalendarDay(day.dataset.date);
             });
         });
+    }
+
+    hasTimeSlotsForDate(date, cantiereId) {
+        const dateStr = new Date(date).toISOString().split('T')[0];
+        const cantiere = this.cantieri.find(c => c.id === cantiereId);
+        
+        if (!cantiere || !cantiere.calendarSelections || !cantiere.calendarSelections[dateStr]) {
+            return false;
+        }
+        
+        const dayData = cantiere.calendarSelections[dateStr];
+        return dayData.timeSlots && Object.keys(dayData.timeSlots).length > 0;
+    }
+
+    selectCalendarDay(dateStr) {
+        this.selectedDate = new Date(dateStr);
+        this.showTimeSlotManager();
+    }
+
+    showTimeSlotManager() {
+        if (!this.selectedDate || !this.currentCantiereId) return;
+        
+        const cantiere = this.cantieri.find(c => c.id === this.currentCantiereId);
+        const operaiAssegnati = cantiere.operai.map(id => this.operai.find(o => o.id === id)).filter(o => o);
+        const dateStr = this.selectedDate.toISOString().split('T')[0];
+        
+        let timeSlotsHtml = '';
+        
+        operaiAssegnati.forEach(operaio => {
+            const dayData = cantiere.calendarSelections[dateStr] || {};
+            const timeSlot = dayData.timeSlots ? dayData.timeSlots[operaio.id] : null;
+            
+            timeSlotsHtml += `
+                <div class="operaio-time-slot">
+                    <div class="operaio-info">
+                        <strong>${operaio.avatar} ${operaio.nome}</strong>
+                        <small>${operaio.specializzazione} - Livello ${operaio.livello}</small>
+                    </div>
+                    <div class="time-inputs">
+                        <input type="time" 
+                               value="${timeSlot ? timeSlot.start : '08:00'}" 
+                               class="time-start" 
+                               data-operaio-id="${operaio.id}">
+                        <span>alle</span>
+                        <input type="time" 
+                               value="${timeSlot ? timeSlot.end : '17:00'}" 
+                               class="time-end" 
+                               data-operaio-id="${operaio.id}">
+                    </div>
+                </div>
+            `;
+        });
+        
+        const modalHtml = `
+            <div class="modal" id="modal-time-slots">
+                <div class="modal-content">
+                    <h3>⏰ Gestione Orari - ${this.selectedDate.toLocaleDateString('it-IT')}</h3>
+                    
+                    <div class="time-slots-container">
+                        ${timeSlotsHtml}
+                    </div>
+                    
+                    <div class="time-slots-actions">
+                        <button class="btn btn-secondary" onclick="app.applySameTimeToAll()">
+                            ⚡ Stesso Orario per Tutti
+                        </button>
+                        <button class="btn btn-primary" onclick="app.saveTimeSlots()">
+                            💾 Salva Orari
+                        </button>
+                        <button class="btn btn-secondary" onclick="app.closeTimeSlots()">
+                            ❌ Annulla
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Rimuovi modal esistente se presente
+        const existingModal = document.getElementById('modal-time-slots');
+        if (existingModal) {
+            existingModal.remove();
+        }
+        
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+    }
+
+    applySameTimeToAll() {
+        const firstStart = document.querySelector('.time-start').value;
+        const firstEnd = document.querySelector('.time-end').value;
+        
+        document.querySelectorAll('.time-start').forEach(input => {
+            input.value = firstStart;
+        });
+        
+        document.querySelectorAll('.time-end').forEach(input => {
+            input.value = firstEnd;
+        });
+        
+        alert('⚡ Orario applicato a tutti i dipendenti');
+    }
+
+    saveTimeSlots() {
+        if (!this.selectedDate || !this.currentCantiereId) return;
+        
+        const cantiere = this.cantieri.find(c => c.id === this.currentCantiereId);
+        const dateStr = this.selectedDate.toISOString().split('T')[0];
+        
+        // Inizializza la struttura dati per il giorno
+        if (!cantiere.calendarSelections[dateStr]) {
+            cantiere.calendarSelections[dateStr] = {
+                selected: true,
+                timeSlots: {}
+            };
+        }
+        
+        // Salva gli orari per ogni operaio
+        document.querySelectorAll('.operaio-time-slot').forEach(slot => {
+            const operaioId = parseInt(slot.querySelector('.time-start').dataset.operaioId);
+            const startTime = slot.querySelector('.time-start').value;
+            const endTime = slot.querySelector('.time-end').value;
+            
+            cantiere.calendarSelections[dateStr].timeSlots[operaioId] = {
+                start: startTime,
+                end: endTime
+            };
+        });
+        
+        this.saveAllData();
+        this.closeTimeSlots();
+        this.renderCalendar();
+        
+        alert('✅ Orari salvati con successo');
+    }
+
+    closeTimeSlots() {
+        const modal = document.getElementById('modal-time-slots');
+        if (modal) {
+            modal.remove();
+        }
+        this.selectedDate = null;
     }
 
     isCalendarDaySelected(date) {
@@ -964,7 +1436,7 @@ class SseManager {
         const cantiere = this.cantieri.find(c => c.id === this.currentCantiereId);
         if (!cantiere || !cantiere.calendarSelections) return false;
         const dateStr = new Date(date).toISOString().split('T')[0];
-        return cantiere.calendarSelections[dateStr] === true;
+        return cantiere.calendarSelections[dateStr] && cantiere.calendarSelections[dateStr].selected;
     }
 
     toggleCalendarDay(dateStr) {
@@ -974,7 +1446,16 @@ class SseManager {
         
         if (!cantiere.calendarSelections) cantiere.calendarSelections = {};
         const dateKey = new Date(dateStr).toISOString().split('T')[0];
-        cantiere.calendarSelections[dateKey] = !cantiere.calendarSelections[dateKey];
+        
+        if (cantiere.calendarSelections[dateKey]) {
+            cantiere.calendarSelections[dateKey].selected = !cantiere.calendarSelections[dateKey].selected;
+        } else {
+            cantiere.calendarSelections[dateKey] = {
+                selected: true,
+                timeSlots: {}
+            };
+        }
+        
         this.renderCalendar();
         this.saveAllData();
     }
@@ -993,7 +1474,8 @@ class SseManager {
         this.renderCalendar();
     }
 
-    sendParticipationEmails() {
+    // ===== INVIO EMAIL MIGLIORATO =====
+    async sendParticipationEmails() {
         if (!this.currentCantiereId) return;
         const cantiere = this.cantieri.find(c => c.id === this.currentCantiereId);
         if (!cantiere) return;
@@ -1004,7 +1486,9 @@ class SseManager {
             return;
         }
         
-        const selectedDates = Object.keys(cantiere.calendarSelections || {}).filter(date => cantiere.calendarSelections[date]);
+        const selectedDates = Object.keys(cantiere.calendarSelections || {})
+            .filter(date => cantiere.calendarSelections[date] && cantiere.calendarSelections[date].selected);
+        
         if (selectedDates.length === 0) {
             alert('⚠️ Nessun giorno selezionato nel calendario');
             return;
@@ -1015,18 +1499,50 @@ class SseManager {
         button.textContent = '📤 Invio in corso...';
         button.disabled = true;
         
-        setTimeout(() => {
-            const giorni = selectedDates.map(date => new Date(date).toLocaleDateString('it-IT')).join(', ');
+        try {
+            // Prepara i dati per l'invio email
+            const emailData = {
+                cantiere: cantiere.nome,
+                indirizzo: cantiere.indirizzo,
+                dates: selectedDates.map(date => {
+                    const dateObj = new Date(date);
+                    const dayData = cantiere.calendarSelections[date];
+                    return {
+                        date: dateObj.toLocaleDateString('it-IT'),
+                        timeSlots: dayData.timeSlots || {}
+                    };
+                })
+            };
             
-            // Simulazione invio email
-            operaiAssegnati.forEach(operaio => {
-                console.log(`📧 Email inviata a ${operaio.email}: Partecipazione cantiere ${cantiere.nome} per i giorni ${giorni}`);
-            });
+            // Invia email a ogni operaio
+            for (const operaio of operaiAssegnati) {
+                await this.sendEmailToOperaio(operaio, emailData);
+            }
             
+            alert(`✅ Email inviate con successo a ${operaiAssegnati.length} operai`);
+            
+        } catch (error) {
+            console.error('Errore nell\'invio email:', error);
+            alert('❌ Errore nell\'invio delle email');
+        } finally {
             button.textContent = originalText;
             button.disabled = false;
-            alert(`✅ Email inviate con successo a ${operaiAssegnati.length} operai per i giorni: ${giorni}`);
-        }, 2000);
+        }
+    }
+
+    async sendEmailToOperaio(operaio, emailData) {
+        // Simulazione invio email - da implementare con servizio email reale
+        console.log(`📧 Email inviata a ${operaio.email}:`, {
+            cantiere: emailData.cantiere,
+            indirizzo: emailData.indirizzo,
+            date: emailData.dates.map(d => {
+                const timeSlot = d.timeSlots[operaio.id];
+                return `${d.date}: ${timeSlot ? `${timeSlot.start} - ${timeSlot.end}` : 'Orario non definito'}`;
+            }).join(', ')
+        });
+        
+        // Simula ritardo di rete
+        await new Promise(resolve => setTimeout(resolve, 1000));
     }
 
     // ===== GESTIONE UTENTI =====
@@ -1185,17 +1701,226 @@ class SseManager {
 
     importOperaiCSV() {
         alert('📥 Funzionalità di importazione CSV in sviluppo');
-        // Implementazione futura per importare operai da CSV
     }
 
     // ===== IMPOSTAZIONI =====
-    showSettings(activeTab = 'email') {
-        this.showModal('modal-settings');
-        
-        // Attiva tab specificato
-        if (activeTab) {
-            this.switchSettingsTab(activeTab);
+    showSettings(activeTab = 'general') {
+        // Crea modal settings dinamico
+        const modalHtml = `
+            <div id="modal-settings" class="modal">
+                <div class="modal-content modal-large">
+                    <h3>⚙️ Impostazioni Sistema</h3>
+                    
+                    <div class="tabs-container">
+                        <div class="tab ${activeTab === 'general' ? 'active' : ''}" data-tab="general">🌐 Generali</div>
+                        <div class="tab ${activeTab === 'email' ? 'active' : ''}" data-tab="email">📧 Email</div>
+                        <div class="tab ${activeTab === 'database' ? 'active' : ''}" data-tab="database">🗄️ Database</div>
+                    </div>
+
+                    <!-- TAB GENERALE -->
+                    <div id="settings-general" class="tab-content ${activeTab === 'general' ? '' : 'hidden'}">
+                        <h4>🌐 Impostazioni Generali</h4>
+                        
+                        <div class="form-group">
+                            <label>Nome Azienda</label>
+                            <input type="text" id="company-name" class="form-control" value="Standard System Engineering Srl">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Drag & Drop</label>
+                            <select id="drag-drop-enabled" class="form-control">
+                                <option value="true" ${this.isDragDropActive ? 'selected' : ''}>Attivato</option>
+                                <option value="false" ${!this.isDragDropActive ? 'selected' : ''}>Disattivato</option>
+                            </select>
+                        </div>
+                        
+                        <div class="general-actions">
+                            <button id="save-general" class="btn btn-primary">💾 Salva</button>
+                            <button id="close-settings" class="btn btn-secondary">✅ Chiudi</button>
+                        </div>
+                    </div>
+
+                    <!-- TAB EMAIL -->
+                    <div id="settings-email" class="tab-content ${activeTab === 'email' ? '' : 'hidden'}">
+                        <h4>📧 Configurazione Email SMTP</h4>
+                        
+                        <div class="form-group">
+                            <label>Server SMTP</label>
+                            <input type="text" id="smtp-server" class="form-control" placeholder="smtp.gmail.com">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Porta SMTP</label>
+                            <input type="number" id="smtp-port" class="form-control" placeholder="587" value="587">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Email Mittente</label>
+                            <input type="email" id="sender-email" class="form-control" placeholder="cantieri@azienda.com">
+                        </div>
+                        
+                        <div class="email-actions">
+                            <button id="save-email" class="btn btn-primary">💾 Salva</button>
+                            <button id="close-settings2" class="btn btn-secondary">✅ Chiudi</button>
+                        </div>
+                    </div>
+
+                    <!-- TAB DATABASE -->
+                    <div id="settings-database" class="tab-content ${activeTab === 'database' ? '' : 'hidden'}">
+                        <h4>🗄️ Configurazione Database Supabase</h4>
+                        
+                        <div class="form-group">
+                            <label>Supabase URL</label>
+                            <input type="text" id="supabase-url" class="form-control" placeholder="https://tuoprogetto.supabase.co">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Supabase API Key</label>
+                            <input type="password" id="supabase-key" class="form-control" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+                        </div>
+                        
+                        <div class="database-status">
+                            <strong>Stato Connessione:</strong> 
+                            <span class="status-indicator ${this.supabaseConfigured ? 'connected' : 'disconnected'}">
+                                ${this.supabaseConfigured ? '✅ Connesso' : '❌ Disconnesso'}
+                            </span>
+                        </div>
+                        
+                        <div class="database-actions">
+                            <button id="save-database" class="btn btn-primary">💾 Salva Configurazione</button>
+                            <button id="test-database" class="btn btn-secondary">🔧 Test Connessione</button>
+                            <button id="sync-database" class="btn btn-secondary" ${this.supabaseConfigured ? '' : 'disabled'}>🔄 Sincronizza Ora</button>
+                            <button id="close-settings3" class="btn btn-secondary">✅ Chiudi</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Rimuovi modal esistente se presente
+        const existingModal = document.getElementById('modal-settings');
+        if (existingModal) {
+            existingModal.remove();
         }
+
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+        // Carica i valori salvati
+        this.loadSettingsValues();
+
+        // Setup event listeners
+        this.setupSettingsEvents();
+    }
+
+    loadSettingsValues() {
+        const config = this.loadData('supabase_config') || {};
+        document.getElementById('supabase-url').value = config.url || '';
+        document.getElementById('supabase-key').value = config.key || '';
+    }
+
+    setupSettingsEvents() {
+        // Tabs
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                const tabName = e.target.dataset.tab;
+                this.showSettings(tabName);
+            });
+        });
+
+        // Salvataggio configurazione database
+        document.getElementById('save-database')?.addEventListener('click', () => this.saveDatabaseSettings());
+        document.getElementById('test-database')?.addEventListener('click', () => this.testDatabaseConnection());
+        document.getElementById('sync-database')?.addEventListener('click', () => this.syncWithDatabase());
+
+        // Altri salvataggi
+        document.getElementById('save-general')?.addEventListener('click', () => this.saveGeneralSettings());
+        document.getElementById('save-email')?.addEventListener('click', () => this.saveEmailSettings());
+
+        // Chiusura modal
+        document.getElementById('close-settings')?.addEventListener('click', () => this.closeModal('modal-settings'));
+        document.getElementById('close-settings2')?.addEventListener('click', () => this.closeModal('modal-settings'));
+        document.getElementById('close-settings3')?.addEventListener('click', () => this.closeModal('modal-settings'));
+    }
+
+    async saveDatabaseSettings() {
+        const url = document.getElementById('supabase-url').value.trim();
+        const key = document.getElementById('supabase-key').value.trim();
+        
+        if (!url || !key) {
+            alert('⚠️ Inserisci sia URL che API Key');
+            return;
+        }
+        
+        const config = { url, key };
+        this.saveData('supabase_config', config);
+        
+        // Ricarica configurazione
+        await this.loadSupabaseConfig();
+        
+        if (this.supabaseConfigured) {
+            alert('✅ Configurazione database salvata con successo');
+            // Ricarica la modal per aggiornare lo stato
+            this.showSettings('database');
+        } else {
+            alert('❌ Errore nella configurazione. Verifica le credenziali.');
+        }
+    }
+
+    async testDatabaseConnection() {
+        if (!this.supabaseConfigured) {
+            alert('❌ Supabase non configurato');
+            return;
+        }
+
+        try {
+            // Test semplice della connessione
+            const { data, error } = await this.supabase
+                .from('operai')
+                .select('count')
+                .limit(1);
+            
+            if (error) throw error;
+            
+            alert('✅ Connessione al database riuscita!');
+        } catch (error) {
+            console.error('Errore test connessione:', error);
+            alert('❌ Errore nella connessione al database');
+        }
+    }
+
+    async syncWithDatabase() {
+        if (!this.supabaseConfigured) {
+            alert('❌ Supabase non configurato. Configura le credenziali nel pannello impostazioni.');
+            return;
+        }
+
+        try {
+            await this.loadDataFromSupabase();
+            this.renderApp();
+            alert('✅ Sincronizzazione con database completata');
+        } catch (error) {
+            console.error('Errore nella sincronizzazione:', error);
+            alert('❌ Errore nella sincronizzazione con il database');
+        }
+    }
+
+    saveGeneralSettings() {
+        const companyName = document.getElementById('company-name').value;
+        const dragDropEnabled = document.getElementById('drag-drop-enabled').value === 'true';
+        
+        this.isDragDropActive = dragDropEnabled;
+        this.saveData('general_settings', {
+            companyName,
+            dragDropEnabled
+        });
+        
+        alert('✅ Impostazioni generali salvate');
+        this.closeModal('modal-settings');
+    }
+
+    saveEmailSettings() {
+        alert('✅ Impostazioni email salvate (demo)');
+        this.closeModal('modal-settings');
     }
 
     switchSettingsTab(tabName) {
@@ -1214,19 +1939,8 @@ class SseManager {
         document.querySelector(`[data-tab="${tabName}"]`)?.classList.add('active');
     }
 
-    saveEmailSettings() {
-        alert('✅ Impostazioni email salvate (demo)');
-        // Implementazione futura per salvare impostazioni email reali
-    }
-
-    saveGeneralSettings() {
-        alert('✅ Impostazioni generali salvate (demo)');
-        // Implementazione futura per salvare impostazioni generali reali
-    }
-
     testEmailConnection() {
         alert('🔧 Test connessione email eseguito (demo)');
-        // Implementazione futura per test reale connessione email
     }
 
     resetEmailSettings() {
@@ -1234,10 +1948,6 @@ class SseManager {
             document.getElementById('smtp-server').value = '';
             document.getElementById('smtp-port').value = '587';
             document.getElementById('sender-email').value = '';
-            document.getElementById('email-password').value = '';
-            document.getElementById('sender-name').value = 'Sistema Cantieri';
-            document.getElementById('email-subject').value = 'Convocazione Cantiere - {cantiere}';
-            document.getElementById('email-template').value = '';
             alert('🔄 Impostazioni email resettate');
         }
     }
@@ -1245,9 +1955,7 @@ class SseManager {
     resetGeneralSettings() {
         if (confirm('Resettare le impostazioni generali?')) {
             document.getElementById('company-name').value = 'Standard System Engineering Srl';
-            document.getElementById('timezone').value = 'Europe/Rome';
-            document.getElementById('language').value = 'it';
-            document.getElementById('datetime-format').value = 'dd/mm/yyyy';
+            document.getElementById('drag-drop-enabled').value = 'true';
             alert('🔄 Impostazioni generali resettate');
         }
     }
@@ -1259,7 +1967,7 @@ class SseManager {
             cantieri: this.cantieri,
             users: this.users,
             exportDate: new Date().toISOString(),
-            version: '1.6.3'
+            version: '1.6.4'
         };
         
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -1277,7 +1985,6 @@ class SseManager {
 
     importData() {
         alert('📂 Funzionalità di importazione dati in sviluppo');
-        // Implementazione futura per importare dati da file JSON
     }
 
     // ===== FUNZIONALITÀ AGGIUNTIVE MENU =====
@@ -1308,7 +2015,7 @@ class SseManager {
         if (this.autoSaveEnabled) {
             setInterval(() => {
                 this.saveAllData();
-            }, 30000); // Salva ogni 30 secondi
+            }, 30000);
         }
     }
 
@@ -1332,6 +2039,14 @@ class SseManager {
             return null;
         }
     }
+
+    saveData(key, data) {
+        try {
+            localStorage.setItem('sse_' + key, JSON.stringify(data));
+        } catch (error) {
+            console.error('Errore nel salvataggio dati:', error);
+        }
+    }
 }
 
 // Inizializza l'applicazione
@@ -1349,6 +2064,102 @@ style.textContent = `
     
     .current-user-master .master-only {
         display: block !important;
+    }
+
+    /* Stili per il calendario avanzato */
+    .time-slots-container {
+        max-height: 400px;
+        overflow-y: auto;
+        margin: 15px 0;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-base);
+        padding: 10px;
+    }
+
+    .operaio-time-slot {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px;
+        margin-bottom: 8px;
+        background: var(--color-surface);
+        border-radius: var(--radius-sm);
+        border-left: 4px solid var(--color-primary);
+    }
+
+    .operaio-info {
+        flex: 1;
+    }
+
+    .operaio-info strong {
+        display: block;
+        margin-bottom: 4px;
+    }
+
+    .operaio-info small {
+        color: var(--color-text-secondary);
+        font-size: 0.85em;
+    }
+
+    .time-inputs {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .time-inputs input[type="time"] {
+        padding: 6px;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-sm);
+        font-size: 14px;
+        background: var(--color-surface);
+        color: var(--color-text);
+    }
+
+    .time-slots-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        margin-top: 15px;
+        padding-top: 15px;
+        border-top: 1px solid var(--color-border);
+    }
+
+    .time-slots-indicator {
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        font-size: 10px;
+    }
+
+    .calendar-day.has-slots {
+        background: linear-gradient(135deg, var(--color-bg-1), var(--color-bg-2));
+        position: relative;
+    }
+
+    /* Stili per le impostazioni database */
+    .database-status {
+        padding: 10px;
+        background: var(--color-surface);
+        border-radius: var(--radius-sm);
+        margin: 15px 0;
+        border: 1px solid var(--color-border);
+    }
+
+    .status-indicator.connected {
+        color: var(--color-success);
+        font-weight: bold;
+    }
+
+    .status-indicator.disconnected {
+        color: var(--color-error);
+        font-weight: bold;
+    }
+
+    .database-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
     }
 `;
 document.head.appendChild(style);
