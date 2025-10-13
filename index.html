@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sse Manager - Ver 1.6.4</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏗️</text></svg>">
+</head>
+<body>
+    <!-- SCHERMATA LOGIN -->
+    <div id="login-screen" class="login-screen">
+        <div class="login-container">
+            <div class="login-header">
+                <h1>🏗️ Sse Manager</h1>
+                <p>Sistema di Gestione Cantieri e Operai</p>
+                <div class="version-info">
+                    <span class="version-badge">Ver 1.6.4</span>
+                    <span class="database-badge">📊 Database Integration</span>
+                </div>
+            </div>
+            <form class="login-form">
+                <div class="form-group">
+                    <label for="login-username">👤 Username</label>
+                    <input type="text" id="login-username" placeholder="Inserisci username" required>
+                </div>
+                <div class="form-group">
+                    <label for="login-password">🔒 Password</label>
+                    <input type="password" id="login-password" placeholder="Inserisci password" required>
+                </div>
+                <button type="button" id="login-btn" class="btn btn-primary btn-login">🚀 Accedi</button>
+            </form>
+            <div class="login-footer">
+                <p><strong>Credenziali di accesso:</strong></p>
+                <p><code>master</code> / <code>Sse19731973!</code></p>
+                <p><code>marco.rossi</code> / <code>password123</code></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- APPLICAZIONE PRINCIPALE -->
+    <div id="main-app" class="main-app hidden">
+        <!-- HEADER -->
+        <header class="header">
+            <div class="header-left">
+                <h1>🏗️ Sse Manager</h1>
+                <span class="version-text">Ver 1.6.4</span>
+            </div>
+            <div class="header-center">
+                <div class="stats-container">
+                    <div class="stat-item">
+                        <span class="stat-icon">👥</span>
+                        <span class="stat-label">Operai:</span>
+                        <span class="stat-value" id="total-operai">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-icon">✅</span>
+                        <span class="stat-label">Assegnati:</span>
+                        <span class="stat-value" id="assigned-operai">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-icon">🏗️</span>
+                        <span class="stat-label">Cantieri:</span>
+                        <span class="stat-value" id="total-cantieri">0</span>
+                    </div>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="user-info">
+                    <span id="mode-text">Modalità: Guest</span>
+                    <span id="user-info">👤 Utente</span>
+                </div>
+                <div class="menu-container">
+                    <button id="menu-btn" class="btn btn-menu">⚙️ Menu</button>
+                    <div id="menu-dropdown" class="menu-dropdown hidden">
+                        <div class="menu-item" data-action="focus-search-operai">🔍 Cerca Operai</div>
+                        <div class="menu-item" data-action="focus-search-cantieri">🔍 Cerca Cantieri</div>
+                        <div class="menu-separator"></div>
+                        <div class="menu-item master-only" data-action="manage-users">👥 Gestione Utenti</div>
+                        <div class="menu-item" data-action="open-settings">⚙️ Impostazioni</div>
+                        <div class="menu-separator"></div>
+                        <div class="menu-item" data-action="export-data">📤 Esporta Dati</div>
+                        <div class="menu-item" data-action="import-data">📥 Importa Dati</div>
+                        <div class="menu-separator"></div>
+                        <div class="menu-item" data-action="show-info">ℹ️ Info Sistema</div>
+                        <div class="menu-item" data-action="logout">🚪 Logout</div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- CONTENUTO PRINCIPALE -->
+        <main class="main-content">
+            <!-- SIDEBAR OPERAI -->
+            <aside class="sidebar">
+                <div class="sidebar-header">
+                    <h2>👥 Operai</h2>
+                    <div class="master-only">
+                        <button class="btn btn-primary btn-sm" onclick="app.addOperaio()">➕ Aggiungi</button>
+                    </div>
+                </div>
+                
+                <div class="search-section">
+                    <input type="text" id="search-operai" class="search-input" placeholder="🔍 Cerca operai...">
+                </div>
+                
+                <div class="filter-section">
+                    <div class="filter-controls">
+                        <select id="filter-specializzazione" class="filter-select">
+                            <option value="">Tutte le specializzazioni</option>
+                            <option value="Elettricista">Elettricista</option>
+                            <option value="Meccanico">Meccanico</option>
+                        </select>
+                        <select id="filter-livello" class="filter-select">
+                            <option value="">Tutti i livelli</option>
+                            <option value="1">Livello 1</option>
+                            <option value="2">Livello 2</option>
+                            <option value="3">Livello 3</option>
+                            <option value="4">Livello 4</option>
+                            <option value="5">Livello 5</option>
+                        </select>
+                        <select id="filter-preposto" class="filter-select">
+                            <option value="">Tutti</option>
+                            <option value="true">Solo Preposti</option>
+                            <option value="false">Non Preposti</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div id="controls-operai" class="controls"></div>
+                <div id="operai-container" class="operai-container"></div>
+            </aside>
+
+            <!-- MAPPA CANTIERI -->
+            <section class="map-section">
+                <div class="map-header">
+                    <h2>🗺️ Mappa Cantieri</h2>
+                    <div class="map-controls">
+                        <input type="text" id="search-cantieri" class="search-input" placeholder="🔍 Cerca cantieri...">
+                        <div class="master-only">
+                            <button class="btn btn-primary btn-sm" onclick="app.addCantiere()">➕ Aggiungi Cantiere</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="map-container" class="map-container">
+                    <div id="cantieri-container" class="cantieri-container"></div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- MODAL OPERAIO -->
+    <div id="modal-operaio" class="modal hidden">
+        <div class="modal-content">
+            <h3 id="modal-operaio-title">Aggiungi Operaio</h3>
+            <form id="form-operaio">
+                <input type="hidden" id="operaio-id" name="operaio-id">
+                
+                <div class="form-group">
+                    <label for="operaio-nome">👤 Nome Completo</label>
+                    <input type="text" id="operaio-nome" name="nome" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="operaio-email">📧 Email</label>
+                    <input type="email" id="operaio-email" name="email" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="operaio-telefono">📞 Telefono</label>
+                    <input type="tel" id="operaio-telefono" name="telefono">
+                </div>
+                
+                <div class="form-group">
+                    <label for="operaio-specializzazione">🔧 Specializzazione</label>
+                    <select id="operaio-specializzazione" name="specializzazione" required>
+                        <option value="">Seleziona specializzazione</option>
+                        <option value="Elettricista">⚡ Elettricista</option>
+                        <option value="Meccanico">🔧 Meccanico</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="operaio-livello">📊 Livello Esperienza</label>
+                    <select id="operaio-livello" name="livello" required>
+                        <option value="">Seleziona livello</option>
+                        <option value="1">1 - Junior</option>
+                        <option value="2">2 - Base</option>
+                        <option value="3">3 - Intermedio</option>
+                        <option value="4">4 - Avanzato</option>
+                        <option value="5">5 - Senior</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="operaio-preposto" name="preposto">
+                        <span class="checkmark"></span>
+                        ⭐ Preposto
+                    </label>
+                </div>
+                
+                <div class="modal-actions">
+                    <button type="button" id="cancel-operaio" class="btn btn-secondary">❌ Annulla</button>
+                    <button type="submit" class="btn btn-primary">✅ Salva</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL CANTIERE -->
+    <div id="modal-cantiere" class="modal hidden">
+        <div class="modal-content">
+            <h3 id="modal-cantiere-title">Aggiungi Cantiere</h3>
+            <form id="form-cantiere">
+                <input type="hidden" id="cantiere-id" name="cantiere-id">
+                
+                <div class="form-group">
+                    <label for="cantiere-nome">🏗️ Nome Cantiere</label>
+                    <input type="text" id="cantiere-nome" name="nome" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="cantiere-indirizzo">📍 Indirizzo</label>
+                    <input type="text" id="cantiere-indirizzo" name="indirizzo" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="cantiere-tipo">🏢 Tipo Cantiere</label>
+                    <select id="cantiere-tipo" name="tipo" required>
+                        <option value="">Seleziona tipo</option>
+                        <option value="Civile">🏢 Civile</option>
+                        <option value="Industriale">🏭 Industriale</option>
+                        <option value="Residenziale">🏠 Residenziale</option>
+                    </select>
+                </div>
+                
+                <div class="modal-actions">
+                    <button type="button" id="cancel-cantiere" class="btn btn-secondary">❌ Annulla</button>
+                    <button type="submit" class="btn btn-primary">✅ Salva</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL DETTAGLIO CANTIERE -->
+    <div id="modal-cantiere-details" class="modal hidden">
+        <div class="modal-content modal-content-large">
+            <div class="modal-header">
+                <h3 id="cantiere-details-title">Dettagli Cantiere</h3>
+                <button id="close-cantiere-details" class="btn-close">❌</button>
+            </div>
+            
+            <div id="cantiere-details-info" class="cantiere-info-section"></div>
+            
+            <!-- Orari Generali -->
+            <div class="time-slot-container">
+                <h4>⏰ Orario Standard Cantiere</h4>
+                <div class="time-inputs">
+                    <label>
+                        🌅 Inizio: <input type="time" id="time-start" value="08:00">
+                    </label>
+                    <label>
+                        🌇 Fine: <input type="time" id="time-end" value="17:00">
+                    </label>
+                </div>
+            </div>
+            
+            <!-- Lista Operai -->
+            <div class="operai-list">
+                <h4>👥 Operai Assegnati</h4>
+                <div id="cantiere-operai-list"></div>
+            </div>
+            
+            <!-- Calendario -->
+            <div class="calendar-section">
+                <h4>📅 Calendario Pianificazione</h4>
+                <div class="calendar-header">
+                    <button class="calendar-nav prev-month">◀️</button>
+                    <h5 id="calendar-month-year">Gennaio 2024</h5>
+                    <button class="calendar-nav next-month">▶️</button>
+                </div>
+                <div class="calendar-grid" id="calendar-days"></div>
+            </div>
+            
+            <!-- Orari Personalizzati -->
+            <div id="custom-time-slots" class="custom-time-slots-container"></div>
+            
+            <!-- Email Section -->
+            <div class="email-section">
+                <h4>📧 Invio Email Partecipazione</h4>
+                <p>Invia email di conferma agli operai per i giorni selezionati nel calendario.</p>
+                <button id="btn-send-emails" class="btn-send-email">📨 Invia Email di Partecipazione</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL SETTINGS -->
+    <div id="modal-settings" class="modal hidden">
+        <div class="modal-content modal-content-large">
+            <div class="modal-header">
+                <h3>⚙️ Impostazioni Sistema</h3>
+                <button id="close-settings" class="btn-close">❌</button>
+            </div>
+            
+            <div class="tabs-container">
+                <div class="tab active" data-tab="email">📧 Email</div>
+                <div class="tab" data-tab="database">📊 Database</div>
+                <div class="tab" data-tab="general">🔧 Generali</div>
+            </div>
+            
+            <!-- TAB EMAIL -->
+            <div id="tab-email" class="tab-content">
+                <h4>📧 Configurazione Email</h4>
+                <div class="form-group">
+                    <label for="smtp-server">Server SMTP</label>
+                    <input type="text" id="smtp-server" placeholder="smtp.gmail.com">
+                </div>
+                <div class="form-group">
+                    <label for="smtp-port">Porta SMTP</label>
+                    <input type="number" id="smtp-port" placeholder="587" value="587">
+                </div>
+                <div class="form-group">
+                    <label for="email-username">Username Email</label>
+                    <input type="email" id="email-username" placeholder="tua-email@gmail.com">
+                </div>
+                <div class="form-group">
+                    <label for="email-password">Password Email</label>
+                    <input type="password" id="email-password" placeholder="Password o App Password">
+                </div>
+                <div class="settings-actions">
+                    <button id="test-email" class="btn btn-secondary">🧪 Test Connessione</button>
+                    <button id="save-email" class="btn btn-primary">✅ Salva Email</button>
+                    <button id="reset-email" class="btn btn-danger">🔄 Reset</button>
+                </div>
+            </div>
+            
+            <!-- TAB DATABASE -->
+            <div id="tab-database" class="tab-content hidden">
+                <h4>📊 Configurazione Database Supabase</h4>
+                <div class="database-info">
+                    <p>🔗 Connetti il sistema al tuo database Supabase per la sincronizzazione bidirezionale dei dati.</p>
+                    <div class="status-indicator">
+                        <span>Stato connessione: </span>
+                        <span id="supabase-status" class="status-disconnected">❌ Non connesso</span>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="supabase-url">🌐 URL Supabase</label>
+                    <input type="url" id="supabase-url" placeholder="https://your-project.supabase.co">
+                    <small>Trova l'URL nella sezione Settings > API del tuo progetto Supabase</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="supabase-key">🔑 Anon Key</label>
+                    <input type="password" id="supabase-key" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+                    <small>Trova la chiave anon/public nella sezione Settings > API del tuo progetto</small>
+                </div>
+                
+                <div class="database-tables-info">
+                    <h5>📋 Tabelle Richieste</h5>
+                    <ul>
+                        <li><strong>operai</strong>: id, nome, email, telefono, specializzazione, livello, cantiere, avatar, preposto</li>
+                        <li><strong>cantieri</strong>: id, nome, indirizzo, tipo, x, y, operai, calendar_selections, time_slot, operai_time_slots</li>
+                        <li><strong>turni_lavoro</strong>: id, cantiere_id, operaio_id, data, ora_inizio, ora_fine, created_at</li>
+                        <li><strong>users</strong>: id, username, password, type, operaio_id, last_login</li>
+                    </ul>
+                </div>
+                
+                <div class="settings-actions">
+                    <button id="test-supabase" class="btn btn-secondary">🧪 Test Connessione</button>
+                    <button id="save-supabase" class="btn btn-primary">✅ Salva Database</button>
+                    <button id="sync-database" class="btn btn-warning">🔄 Sincronizza Ora</button>
+                </div>
+            </div>
+            
+            <!-- TAB GENERAL -->
+            <div id="tab-general" class="tab-content hidden">
+                <h4>🔧 Impostazioni Generali</h4>
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="auto-save" checked>
+                        <span class="checkmark"></span>
+                        💾 Salvataggio Automatico
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="drag-drop-enabled" checked>
+                        <span class="checkmark"></span>
+                        🖱️ Drag & Drop Attivo
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label for="backup-retention">📅 Conservazione Dati (giorni)</label>
+                    <input type="number" id="backup-retention" value="365" min="30" max="730">
+                    <small>I dati vengono conservati per il periodo specificato (minimo 30 giorni, massimo 2 anni)</small>
+                </div>
+                <div class="settings-actions">
+                    <button id="save-general" class="btn btn-primary">✅ Salva Generali</button>
+                    <button id="reset-general" class="btn btn-danger">🔄 Reset</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL INFO -->
+    <div id="modal-info" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>ℹ️ Informazioni Sistema</h3>
+                <button id="close-info" class="btn-close">❌</button>
+            </div>
+            
+            <div class="info-section">
+                <h4>📊 Statistiche</h4>
+                <p><strong>Operai Totali:</strong> <span id="info-total-operai">0</span></p>
+                <p><strong>Operai Assegnati:</strong> <span id="info-assigned-operai">0</span></p>
+                <p><strong>Cantieri Attivi:</strong> <span id="info-total-cantieri">0</span></p>
+            </div>
+            
+            <div class="info-section">
+                <h4>🚀 Versione</h4>
+                <p><strong>Versione:</strong> 1.6.4</p>
+                <p><strong>Rilascio:</strong> Ottobre 2025</p>
+                <p><strong>Funzionalità:</strong> Database Integration + Custom Time Slots</p>
+            </div>
+            
+            <div class="info-section">
+                <h4>🆕 Novità Versione 1.6.4</h4>
+                <ul>
+                    <li>🗄️ Integrazione database Supabase bidirezionale</li>
+                    <li>⏰ Fasce orarie personalizzate per singolo dipendente</li>
+                    <li>📊 Configurazione database nel menu manager</li>
+                    <li>💾 Conservazione dati per almeno un anno</li>
+                    <li>🔄 Sincronizzazione automatica con cloud database</li>
+                </ul>
+            </div>
+            
+            <div class="info-section">
+                <h4>👨‍💻 Sviluppo</h4>
+                <p><strong>Creato da:</strong> Simone Losito</p>
+                <p><strong>Powered by:</strong> Simoncino</p>
+                <p><strong>Tecnologie:</strong> HTML5, CSS3, JavaScript ES6+, Supabase</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT -->
+    <script src="app.js"></script>
+</body>
+</html>
