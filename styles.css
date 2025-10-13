@@ -2105,3 +2105,43 @@ select.form-control {
     will-change: transform;
     transform: translateZ(0);
 }
+
+/* styles.css - Sse Manager Ver 1.6.4 - SUPABASE INTEGRATION */
+/* [TUTTO IL CODICE CSS RIMANE IDENTICO ALLA VERSIONE 1.6.3] */
+/* Aggiungi solo questi stili alla fine del file: */
+
+/* ===== SUPABASE STATUS INDICATOR ===== */
+.supabase-status {
+    position: fixed;
+    bottom: 10px;
+    left: 10px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: bold;
+    z-index: 1000;
+    box-shadow: var(--shadow-sm);
+    transition: all var(--duration-fast) var(--ease-standard);
+}
+
+.supabase-connected {
+    background: var(--color-success);
+    color: var(--color-btn-primary-text);
+    border: 1px solid rgba(255,255,255,0.2);
+}
+
+.supabase-disconnected {
+    background: var(--color-error);
+    color: var(--color-btn-primary-text);
+    border: 1px solid rgba(255,255,255,0.2);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .supabase-status {
+        bottom: 5px;
+        left: 5px;
+        font-size: 10px;
+        padding: 6px 8px;
+    }
+}
