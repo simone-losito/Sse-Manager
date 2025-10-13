@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏗️ Sse Manager - Ver 1.6.4 COMPLETA</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- SCHERMATA LOGIN -->
+    <div id="login-screen" class="login-screen">
+        <div class="login-container">
+            <h1>🏗️ Sse Manager</h1>
+            <p class="subtitle">Powered by Simoncino - Versione 1.6.4 COMPLETA</p>
+            
+            <div class="login-form">
+                <div class="form-group">
+                    <label for="login-username">Username</label>
+                    <input type="text" id="login-username" class="form-control" placeholder="Inserisci username" value="admin">
+                </div>
+                
+                <div class="form-group">
+                    <label for="login-password">Password</label>
+                    <input type="password" id="login-password" class="form-control" placeholder="Inserisci password" value="admin123">
+                </div>
+                
+                <button id="login-btn" class="btn btn-primary">🚀 Accedi</button>
+                
+                <div class="login-info">
+                    <p><strong>Utenti di test:</strong></p>
+                    <p>👑 <strong>admin</strong> / admin123 (Amministratore)</p>
+                    <p>💼 <strong>manager</strong> / manager123 (Manager)</p>
+                    <p>👷 <strong>marco.rossi</strong> / operaio123 (Operaio)</p>
+                    <p>👷 <strong>luca.verdi</strong> / operaio123 (Operaio)</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- APPLICAZIONE PRINCIPALE -->
+    <div id="main-app" class="main-app hidden">
+        <!-- HEADER -->
+        <header class="header">
+            <div class="header-left">
+                <h1>🏗️ Sse Manager</h1>
+                <span id="mode-text" class="mode-text">Modalità: Manager</span>
+                <div id="user-info" class="user-info"></div>
+                <div id="stats-container" class="stats-container">
+                    <span class="stat-item">👷 Totali: <strong id="total-operai">0</strong></span>
+                    <span class="stat-item">📍 Assegnati: <strong id="assigned-operai">0</strong></span>
+                    <span class="stat-item">🏗️ Cantieri: <strong id="total-cantieri">0</strong></span>
+                    <span class="stat-item">📅 Giornate: <strong id="total-giornate">0</strong></span>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="menu-container">
+                    <button id="menu-btn" class="menu-btn">☰ Menu</button>
+                    <div id="menu-dropdown" class="menu-dropdown hidden">
+                        <!-- Menu per Master -->
+                        <div class="menu-section master-only">
+                            <div class="menu-section-title">👑 Amministrazione</div>
+                            <div class="menu-item" data-action="manage-users">👥 Gestione Utenti</div>
+                            <div class="menu-item" data-action="export-operai">📤 Export Dipendenti</div>
+                            <div class="menu-item" data-action="import-operai">📥 Import Dipendenti</div>
+                            <div class="menu-item" data-action="sync-database">🔄 Sincronizza Database</div>
+                            <div class="menu-separator"></div>
+                        </div>
+                        
+                        <!-- Menu per tutti -->
+                        <div class="menu-item" data-action="focus-search-operai">🔍 Cerca Operai</div>
+                        <div class="menu-item" data-action="focus-search-cantieri">🔍 Cerca Cantieri</div>
+                        <div class="menu-separator"></div>
+                        <div class="menu-item" data-action="show-operai-list">👷 Lista Operai</div>
+                        <div class="menu-item" data-action="show-cantieri-list">🏗️ Lista Cantieri</div>
+                        <div class="menu-separator"></div>
+                        <div class="menu-item" data-action="show-giornate">📅 Gestione Giornate</div>
+                        <div class="menu-item" data-action="export-data">💾 Esporta Dati</div>
+                        <div class="menu-item" data-action="import-data">📂 Importa Dati</div>
+                        <div class="menu-separator"></div>
+                        
+                        <!-- Menu solo per Master -->
+                        <div class="menu-section master-only">
+                            <div class="menu-section-title">⚙️ Configurazione</div>
+                            <div class="menu-item" data-action="open-settings">📧 Impostazioni Email</div>
+                            <div class="menu-item" data-action="open-general-settings">⚙️ Impostazioni Generali</div>
+                            <div class="menu-item" data-action="open-database-settings">🗄️ Configura Database</div>
+                            <div class="menu-separator"></div>
+                        </div>
+                        
+                        <div class="menu-item" data-action="show-info">ℹ️ Informazioni</div>
+                        <div class="menu-item" data-action="show-performance">📊 Monitor Performance</div>
+                        <div class="menu-separator"></div>
+                        <div class="menu-item" data-action="logout">🚪 Logout</div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- CONTENUTO PRINCIPALE -->
+        <main class="main-content">
+            <!-- SIDEBAR OPERAI -->
+            <div class="sidebar">
+                <div class="sidebar-header">
+                    <h2>👷 Gestione Operai</h2>
+                    <input type="text" id="search-operai" placeholder="Cerca operaio, specializzazione..." class="search-input">
+                    <div class="filter-controls">
+                        <select id="filter-specializzazione" class="filter-select">
+                            <option value="">Tutte le specializzazioni</option>
+                            <option value="Elettricista">⚡ Elettricista</option>
+                            <option value="Meccanico">🔧 Meccanico</option>
+                            <option value="Muratore">🧱 Muratore</option>
+                            <option value="Carpentiere">🪵 Carpentiere</option>
+                            <option value="Idraulico">🚰 Idraulico</option>
+                            <option value="Saldatore">🔥 Saldatore</option>
+                            <option value="Operatore Macchine">🚜 Operatore Macchine</option>
+                        </select>
+                        <select id="filter-livello" class="filter-select">
+                            <option value="">Tutti i livelli</option>
+                            <option value="1">1 - Apprendista</option>
+                            <option value="2">2 - Junior</option>
+                            <option value="3">3 - Standard</option>
+                            <option value="4">4 - Senior</option>
+                            <option value="5">5 - Esperto</option>
+                        </select>
+                        <select id="filter-preposto" class="filter-select">
+                            <option value="">Tutti</option>
+                            <option value="si">Solo Preposti</option>
+                            <option value="no">Solo Non Preposti</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="controls-operai" class="controls"></div>
+                <div id="operai-container" class="operai-container">
+                    <div class="loading">🔄 Caricamento operai...</div>
+                </div>
+            </div>
+
+            <!-- AREA MAPPA CANTIERI -->
+            <div class="map-area">
+                <div class="map-header">
+                    <h2>🗺️ Mappa Cantieri</h2>
+                    <input type="text" id="search-cantieri" placeholder="Cerca cantiere..." class="search-input">
+                </div>
+                <div id="controls-cantieri" class="controls"></div>
+                <div id="map-container" class="map-container">
+                    <div class="loading">🏗️ Caricamento cantieri...</div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- MODAL OPERAIO -->
+    <div id="modal-operaio" class="modal hidden">
+        <div class="modal-content">
+            <h3 id="modal-operaio-title">Aggiungi Operaio</h3>
+            <form id="form-operaio">
+                <input type="hidden" id="operaio-id">
+                
+                <div class="form-group">
+                    <label>Nome Completo</label>
+                    <input type="text" id="operaio-nome" class="form-control" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="operaio-email" class="form-control" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Telefono</label>
+                    <input type="tel" id="operaio-telefono" class="form-control" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Specializzazione</label>
+                    <select id="operaio-specializzazione" class="form-control" required>
+                        <option value="">Seleziona specializzazione</option>
+                        <option value="Elettricista">⚡ Elettricista</option>
+                        <option value="Meccanico">🔧 Meccanico</option>
+                        <option value="Muratore">🧱 Muratore</option>
+                        <option value="Carpentiere">🪵 Carpentiere</option>
+                        <option value="Idraulico">🚰 Idraulico</option>
+                        <option value="Saldatore">🔥 Saldatore</option>
+                        <option value="Operatore Macchine">🚜 Operatore Macchine</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Livello di Esperienza</label>
+                    <select id="operaio-livello" class="form-control" required>
+                        <option value="">Seleziona livello</option>
+                        <option value="1">1 - Apprendista</option>
+                        <option value="2">2 - Junior</option>
+                        <option value="3">3 - Standard</option>
+                        <option value="4">4 - Senior</option>
+                        <option value="5">5 - Esperto</option>
+                    </select>
+                </div>
+                
+                <div class="checkbox-container">
+                    <input type="checkbox" id="operaio-preposto">
+                    <label for="operaio-preposto">⭐ Preposto/Supervisore</label>
+                </div>
+                
+                <div class="modal-actions">
+                    <button type="button" id="cancel-operaio" class="btn btn-secondary">❌ Annulla</button>
+                    <button type="submit" class="btn btn-primary">💾 Salva</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL CANTIERE -->
+    <div id="modal-cantiere" class="modal hidden">
+        <div class="modal-content">
+            <h3 id="modal-cantiere-title">Aggiungi Cantiere</h3>
+            <form id="form-cantiere">
+                <input type="hidden" id="cantiere-id">
+                
+                <div class="form-group">
+                    <label>Nome Cantiere</label>
+                    <input type="text" id="cantiere-nome" class="form-control" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Indirizzo</label>
+                    <input type="text" id="cantiere-indirizzo" class="form-control" placeholder="Via, Civico, Città" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Tipo di Cantiere</label>
+                    <select id="cantiere-tipo" class="form-control" required>
+                        <option value="">Seleziona tipo</option>
+                        <option value="Civile">🏰 Civile</option>
+                        <option value="Industriale">🏭 Industriale</option>
+                        <option value="Residenziale">🏢 Residenziale</option>
+                        <option value="Stradale">🛣️ Stradale</option>
+                        <option value="Ferroviario">🚂 Ferroviario</option>
+                    </select>
+                </div>
+                
+                <div class="modal-actions">
+                    <button type="button" id="cancel-cantiere" class="btn btn-secondary">❌ Annulla</button>
+                    <button type="submit" class="btn btn-primary">💾 Salva</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL DETTAGLI CANTIERE -->
+    <div id="modal-cantiere-details" class="modal hidden">
+        <div class="modal-content modal-content-large">
+            <h3 id="cantiere-details-title">Dettagli Cantiere</h3>
+            
+            <div id="cantiere-details-content">
+                <div class="cantiere-info-section">
+                    <h4>📋 Informazioni Generali</h4>
+                    <div id="cantiere-basic-info"></div>
+                </div>
+
+                <div class="operai-list">
+                    <h4>👷 Operai Assegnati</h4>
+                    <div id="cantiere-operai-list"></div>
+                </div>
+
+                <div class="calendar-section">
+                    <div class="calendar-header">
+                        <button class="calendar-nav prev-month">‹</button>
+                        <h4 id="calendar-month-year"></h4>
+                        <button class="calendar-nav next-month">›</button>
+                    </div>
+                    <div class="calendar-grid" id="calendar-grid"></div>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button id="close-cantiere-details" class="btn btn-primary">✅ Chiudi</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL GESTIONE GIORNATE -->
+    <div id="modal-giornate" class="modal hidden">
+        <div class="modal-content modal-content-large">
+            <h3>📅 Gestione Giornate Lavoro</h3>
+            
+            <div class="giornate-controls">
+                <button onclick="app.addGiornata()" class="btn btn-primary">➕ Aggiungi Giornata</button>
+                <button onclick="app.exportGiornateCSV()" class="btn btn-secondary">📤 Export CSV</button>
+            </div>
+            
+            <div class="giornate-filters">
+                <input type="month" id="filter-mese" class="form-control">
+                <select id="filter-operaio-giornate" class="form-control">
+                    <option value="">Tutti gli operai</option>
+                </select>
+                <button onclick="app.filterGiornate()" class="btn btn-primary">🔍 Filtra</button>
+            </div>
+            
+            <div class="giornate-list">
+                <table class="giornate-table">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Operaio</th>
+                            <th>Cantiere</th>
+                            <th>Ore</th>
+                            <th>Stato</th>
+                            <th>Azioni</th>
+                        </tr>
+                    </thead>
+                    <tbody id="giornate-table-body">
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="modal-actions">
+                <button onclick="app.closeModal('modal-giornate')" class="btn btn-primary">✅ Chiudi</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL GESTIONE UTENTI -->
+    <div id="modal-users" class="modal hidden">
+        <div class="modal-content modal-content-large">
+            <h3>👥 Gestione Utenti</h3>
+            
+            <div class="users-controls">
+                <button onclick="app.addUser()" class="btn btn-primary">➕ Aggiungi Utente</button>
+            </div>
+            
+            <div class="users-list">
+                <table class="users-table">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Tipo</th>
+                            <th>Operaio Associato</th>
+                            <th>Ultimo Accesso</th>
+                            <th>Azioni</th>
+                        </tr>
+                    </thead>
+                    <tbody id="users-table-body">
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="modal-actions">
+                <button onclick="app.closeModal('modal-users')" class="btn btn-primary">✅ Chiudi</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL AGGIUNGI UTENTE -->
+    <div id="modal-user-form" class="modal hidden">
+        <div class="modal-content">
+            <h3 id="modal-user-title">Aggiungi Utente</h3>
+            <form id="form-user">
+                <input type="hidden" id="user-id">
+                
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" id="user-username" class="form-control" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="user-password" class="form-control" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Tipo Utente</label>
+                    <select id="user-type" class="form-control" required>
+                        <option value="operaio">Operaio</option>
+                        <option value="manager">Manager</option>
+                        <option value="master">Amministratore</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Associa a Operaio (opzionale)</label>
+                    <select id="user-operaio" class="form-control">
+                        <option value="">Nessuna associazione</option>
+                    </select>
+                </div>
+                
+                <div class="modal-actions">
+                    <button type="button" onclick="app.closeModal('modal-user-form')" class="btn btn-secondary">❌ Annulla</button>
+                    <button type="submit" class="btn btn-primary">💾 Salva</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL ESPORTAZIONE -->
+    <div id="modal-export" class="modal hidden">
+        <div class="modal-content">
+            <h3>💾 Esporta Dati</h3>
+            
+            <div class="export-options">
+                <div class="checkbox-container">
+                    <input type="checkbox" id="export-operai" checked>
+                    <label for="export-operai">👷 Operai</label>
+                </div>
+                <div class="checkbox-container">
+                    <input type="checkbox" id="export-cantieri" checked>
+                    <label for="export-cantieri">🏗️ Cantieri</label>
+                </div>
+                <div class="checkbox-container">
+                    <input type="checkbox" id="export-giornate">
+                    <label for="export-giornate">📅 Giornate lavoro</label>
+                </div>
+                <div class="checkbox-container">
+                    <input type="checkbox" id="export-users">
+                    <label for="export-users">👥 Utenti</label>
+                </div>
+            </div>
+            
+            <div class="modal-actions">
+                <button onclick="app.closeModal('modal-export')" class="btn btn-secondary">❌ Annulla</button>
+                <button onclick="app.executeExport()" class="btn btn-primary">📤 Esporta</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL PERFORMANCE -->
+    <div id="modal-performance" class="modal hidden">
+        <div class="modal-content">
+            <h3>📊 Monitor Performance</h3>
+            
+            <div class="performance-stats">
+                <div class="performance-item">
+                    <strong>Tempo di attività:</strong> <span id="performance-uptime">0s</span>
+                </div>
+                <div class="performance-item">
+                    <strong>Operai in memoria:</strong> <span id="performance-operai-memory">0</span>
+                </div>
+                <div class="performance-item">
+                    <strong>Cantieri in memoria:</strong> <span id="performance-cantieri-memory">0</span>
+                </div>
+                <div class="performance-item">
+                    <strong>Giornate lavoro:</strong> <span id="performance-giornate-memory">0</span>
+                </div>
+                <div class="performance-item">
+                    <strong>Utenti registrati:</strong> <span id="performance-users-memory">0</span>
+                </div>
+            </div>
+            
+            <div class="performance-actions">
+                <button onclick="app.clearCache()" class="btn btn-secondary">🗑️ Pulisci Cache</button>
+                <button onclick="app.optimizeMemory()" class="btn btn-secondary">🧹 Ottimizza Memoria</button>
+            </div>
+            
+            <div class="modal-actions">
+                <button id="close-performance" class="btn btn-primary">✅ Chiudi</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL INFORMAZIONI -->
+    <div id="modal-info" class="modal hidden">
+        <div class="modal-content">
+            <h3>ℹ️ Informazioni Sistema</h3>
+            
+            <div class="info-content">
+                <div class="info-section">
+                    <h4>🏗️ Sse Manager - Versione Completa</h4>
+                    <p><strong>Versione:</strong> 1.6.4 COMPLETA</p>
+                    <p><strong>Creato da:</strong> Simone Losito</p>
+                    <p><strong>Powered by:</strong> Simoncino</p>
+                    <p><strong>Stato:</strong> 🟢 Tutte le funzioni attive</p>
+                </div>
+                
+                <div class="info-section">
+                    <h4>📊 Statistiche Correnti</h4>
+                    <p><strong>Operai Totali:</strong> <span id="info-total-operai">0</span></p>
+                    <p><strong>Operai Assegnati:</strong> <span id="info-assigned-operai">0</span></p>
+                    <p><strong>Cantieri Attivi:</strong> <span id="info-total-cantieri">0</span></p>
+                    <p><strong>Giornate Lavoro:</strong> <span id="info-total-giornate">0</span></p>
+                </div>
+                
+                <div class="info-section">
+                    <h4>🎯 Funzionalità Attive</h4>
+                    <ul>
+                        <li>✅ Gestione completa operai</li>
+                        <li>✅ Gestione completa cantieri</li>
+                        <li>✅ Gestione giornate lavoro</li>
+                        <li>✅ Gestione utenti</li>
+                        <li>✅ Esportazione/Importazione dati</li>
+                        <li>✅ Monitor performance</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button id="close-info" class="btn btn-primary">✅ Chiudi</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PERFORMANCE MONITOR -->
+    <div id="performance-monitor" class="performance-monitor hidden">
+        📊 <span id="monitor-stats">Caricamento...</span>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
