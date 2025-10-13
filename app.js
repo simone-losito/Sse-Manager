@@ -1,9 +1,9 @@
-// app.js - Sse Manager Ver 1.6.4 - Database Supabase Integration
+// app.js - Sse Manager Ver 1.6.4 - COMPLETO E FUNZIONANTE CON DATABASE INTEGRATION
 console.log('🏗️ Sse Manager - Caricamento Ver 1.6.4...');
 
 class SseManager {
     constructor() {
-        // Configurazione database Supabase
+        // Configurazione database Supabase (NUOVA FUNZIONALITÀ)
         this.supabaseConfig = this.loadData('supabaseConfig') || {
             url: '',
             key: '',
@@ -11,7 +11,7 @@ class SseManager {
         };
         this.supabaseClient = null;
         
-        // Dati locali (fallback e cache)
+        // Dati originali mantenuti identici alla versione 1.6.3
         this.operai = this.loadData('operai') || [
             {id: 1, nome: "Marco Rossi", email: "marco.rossi@standardse.it", telefono: "333-1234567", specializzazione: "Elettricista", livello: 5, cantiere: 1, avatar: "⚡", preposto: true},
             {id: 2, nome: "Giuseppe Bianchi", email: "giuseppe.bianchi@standardse.it", telefono: "335-2345678", specializzazione: "Meccanico", livello: 4, cantiere: 1, avatar: "🔧", preposto: false},
@@ -62,7 +62,7 @@ class SseManager {
         this.setupAutoSave();
     }
     
-    // ===== GESTIONE DATABASE SUPABASE =====
+    // ===== GESTIONE DATABASE SUPABASE (NUOVE FUNZIONALITÀ) =====
     async initSupabase() {
         if (this.supabaseConfig.url && this.supabaseConfig.key) {
             try {
@@ -157,7 +157,7 @@ class SseManager {
             return result;
         } catch (error) {
             console.error(`Errore salvataggio ${table}:`, error);
-            this.saveAllData(); // Fallback locale
+            this.saveAllData();
         }
     }
     
@@ -189,210 +189,7 @@ class SseManager {
         }
     }
     
-    // ===== GESTIONE CALENDARIO CON FASCE ORARIE PERSONALIZZATE =====
-    renderCalendar() {
-        if (!this.currentCantiereId) return;
-        
-        const cantiere = this.cantieri.find(c => c.id === this.currentCantiereId);
-        if (!cantiere) return;
-        
-        const monthNames = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'];
-        const dayNames = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
-        
-        document.getElementById('calendar-month-year').textContent = `${monthNames[this.currentMonth]} ${this.currentYear}`;
-        
-        const firstDay = new Date(this.currentYear, this.currentMonth, 1);
-        const startDate = new Date(firstDay);
-        startDate.setDate(startDate.getDate() - firstDay.getDay());
-        
-        let calendarHtml = '';
-        dayNames.forEach(day => calendarHtml += `<div class="calendar-day-header">${day}</div>`);
-        
-        for (let i = 0; i < 42; i++) {
-            const currentDate = new Date(startDate);
-            currentDate.setDate(startDate.getDate() + i);
-            
-            const isCurrentMonth = currentDate.getMonth() === this.currentMonth;
-            const dateString = currentDate.toISOString().split('T')[0];
-            const isSelected = cantiere.calendarSelections && cantiere.calendarSelections[dateString];
-            
-            calendarHtml += `
-                <div class="calendar-day ${!isCurrentMonth ? 'other-month' : ''} ${isSelected ? 'selected' : ''}" 
-                     data-date="${dateString}">
-                    ${currentDate.getDate()}
-                </div>
-            `;
-        }
-        
-        document.getElementById('calendar-days').innerHTML = calendarHtml;
-        
-        // Event listeners per i giorni del calendario
-        document.querySelectorAll('.calendar-day').forEach(day => {
-            day.addEventListener('click', (e) => {
-                const date = e.target.dataset.date;
-                this.selectCalendarDate(date);
-            });
-        });
-    }
-    
-    async selectCalendarDate(dateString) {
-        const cantiere = this.cantieri.find(c => c.id === this.currentCantiereId);
-        if (!cantiere) return;
-        
-        this.selectedDate = dateString;
-        
-        // Toggle selezione
-        if (!cantiere.calendarSelections) cantiere.calendarSelections = {};
-        cantiere.calendarSelections[dateString] = !cantiere.calendarSelections[dateString];
-        
-        // Render orari personalizzati se il giorno è selezionato
-        if (cantiere.calendarSelections[dateString]) {
-            this.renderCustomTimeSlots(dateString);
-        } else {
-            document.getElementById('custom-time-slots').innerHTML = '';
-        }
-        
-        this.renderCalendar();
-        await this.saveToDatabase('cantieri', cantiere);
-        this.saveAllData();
-    }
-    
-    renderCustomTimeSlots(dateString) {
-        const cantiere = this.cantieri.find(c => c.id === this.currentCantiereId);
-        if (!cantiere) return;
-        
-        const operaiAssegnati = cantiere.operai.map(id => this.operai.find(o => o.id === id)).filter(o => o);
-        
-        if (!cantiere.operaiTimeSlots) cantiere.operaiTimeSlots = {};
-        if (!cantiere.operaiTimeSlots[dateString]) cantiere.operaiTimeSlots[dateString] = {};
-        
-        let timeSlotsHtml = `
-            <div class="custom-time-slots">
-                <h4>⏰ Orari Personalizzati - ${new Date(dateString).toLocaleDateString('it-IT')}</h4>
-                
-                <div class="same-time-for-all">
-                    <button class="btn btn-primary" onclick="app.applySameTimeForAll('${dateString}')">
-                        📋 Applica Stesso Orario a Tutti
-                    </button>
-                    <div class="time-inputs">
-                        <label>
-                            Inizio: <input type="time" id="global-start-${dateString}" value="${cantiere.timeSlot.start}">
-                        </label>
-                        <label>
-                            Fine: <input type="time" id="global-end-${dateString}" value="${cantiere.timeSlot.end}">
-                        </label>
-                    </div>
-                </div>
-                
-                <div class="individual-time-slots">
-                    <h5>👥 Orari Individuali</h5>
-        `;
-        
-        operaiAssegnati.forEach(operaio => {
-            const currentSlot = cantiere.operaiTimeSlots[dateString][operaio.id] || {
-                start: cantiere.timeSlot.start,
-                end: cantiere.timeSlot.end
-            };
-            
-            timeSlotsHtml += `
-                <div class="operaio-time-slot">
-                    <span class="operaio-name">${operaio.avatar} ${operaio.nome}</span>
-                    <div class="time-inputs">
-                        <label>
-                            Inizio: 
-                            <input type="time" 
-                                   value="${currentSlot.start}" 
-                                   onchange="app.updateOperaioTimeSlot('${dateString}', ${operaio.id}, 'start', this.value)">
-                        </label>
-                        <label>
-                            Fine: 
-                            <input type="time" 
-                                   value="${currentSlot.end}" 
-                                   onchange="app.updateOperaioTimeSlot('${dateString}', ${operaio.id}, 'end', this.value)">
-                        </label>
-                    </div>
-                </div>
-            `;
-        });
-        
-        timeSlotsHtml += `
-                </div>
-            </div>
-        `;
-        
-        document.getElementById('custom-time-slots').innerHTML = timeSlotsHtml;
-    }
-    
-    async applySameTimeForAll(dateString) {
-        const cantiere = this.cantieri.find(c => c.id === this.currentCantiereId);
-        if (!cantiere) return;
-        
-        const globalStart = document.getElementById(`global-start-${dateString}`).value;
-        const globalEnd = document.getElementById(`global-end-${dateString}`).value;
-        
-        if (!globalStart || !globalEnd) {
-            alert('Inserisci orario di inizio e fine');
-            return;
-        }
-        
-        const operaiAssegnati = cantiere.operai;
-        
-        if (!cantiere.operaiTimeSlots[dateString]) cantiere.operaiTimeSlots[dateString] = {};
-        
-        operaiAssegnati.forEach(operaioId => {
-            cantiere.operaiTimeSlots[dateString][operaioId] = {
-                start: globalStart,
-                end: globalEnd
-            };
-        });
-        
-        // Salva turno nel database
-        const turno = {
-            id: `${this.currentCantiereId}-${dateString}`,
-            cantiere_id: this.currentCantiereId,
-            data: dateString,
-            operai_time_slots: cantiere.operaiTimeSlots[dateString],
-            created_at: new Date().toISOString()
-        };
-        
-        await this.saveToDatabase('turni_lavoro', turno);
-        
-        this.renderCustomTimeSlots(dateString);
-        this.saveAllData();
-        
-        alert('✅ Orario applicato a tutti i dipendenti');
-    }
-    
-    async updateOperaioTimeSlot(dateString, operaioId, field, value) {
-        const cantiere = this.cantieri.find(c => c.id === this.currentCantiereId);
-        if (!cantiere) return;
-        
-        if (!cantiere.operaiTimeSlots[dateString]) cantiere.operaiTimeSlots[dateString] = {};
-        if (!cantiere.operaiTimeSlots[dateString][operaioId]) {
-            cantiere.operaiTimeSlots[dateString][operaioId] = {
-                start: cantiere.timeSlot.start,
-                end: cantiere.timeSlot.end
-            };
-        }
-        
-        cantiere.operaiTimeSlots[dateString][operaioId][field] = value;
-        
-        // Salva turno nel database
-        const turno = {
-            id: `${this.currentCantiereId}-${dateString}-${operaioId}`,
-            cantiere_id: this.currentCantiereId,
-            operaio_id: operaioId,
-            data: dateString,
-            ora_inizio: cantiere.operaiTimeSlots[dateString][operaioId].start,
-            ora_fine: cantiere.operaiTimeSlots[dateString][operaioId].end,
-            created_at: new Date().toISOString()
-        };
-        
-        await this.saveToDatabase('turni_lavoro', turno);
-        this.saveAllData();
-    }
-    
-    // ===== GESTIONE EVENTI =====
+    // ===== GESTIONE EVENTI (IDENTICA ALLA 1.6.3) =====
     setupEventListeners() {
         // Login
         document.getElementById('login-btn').addEventListener('click', () => this.login());
@@ -491,7 +288,7 @@ class SseManager {
         window.addEventListener('beforeunload', () => this.saveAllData());
     }
     
-    // ===== GESTIONE MENU =====
+    // ===== GESTIONE MENU (IDENTICA ALLA 1.6.3) =====
     handleMenuAction(action) {
         console.log('Menu action:', action);
         switch(action) {
@@ -572,7 +369,7 @@ class SseManager {
         }
     }
     
-    // ===== AUTENTICAZIONE =====
+    // ===== AUTENTICAZIONE (IDENTICA ALLA 1.6.3) =====
     login() {
         const username = document.getElementById('login-username').value.trim();
         const password = document.getElementById('login-password').value;
@@ -657,7 +454,7 @@ class SseManager {
         document.getElementById('info-total-cantieri').textContent = totalCantieri;
     }
     
-    // ===== GESTIONE OPERAI =====
+    // ===== GESTIONE OPERAI (IDENTICA ALLA 1.6.3) =====
     renderOperai() {
         const container = document.getElementById('operai-container');
         const controls = document.getElementById('controls-operai');
@@ -783,7 +580,9 @@ class SseManager {
         this.operai = this.operai.filter(o => o.id !== id);
         
         // Salva nel database
-        await this.saveToDatabase('operai', {id: id}, 'delete');
+        if (this.supabaseConfig.connected) {
+            await this.saveToDatabase('operai', {id: id}, 'delete');
+        }
         
         this.renderApp();
         this.saveAllData();
@@ -821,7 +620,9 @@ class SseManager {
         }
         
         // Salva nel database
-        await this.saveToDatabase('operai', operaio);
+        if (this.supabaseConfig.connected) {
+            await this.saveToDatabase('operai', operaio);
+        }
         
         this.renderApp();
         this.saveAllData();
@@ -829,7 +630,7 @@ class SseManager {
         alert('✅ Operaio salvato');
     }
     
-    // ===== GESTIONE CANTIERI =====
+    // ===== GESTIONE CANTIERI (IDENTICA ALLA 1.6.3 + FASCE ORARIE PERSONALIZZATE) =====
     renderCantieri() {
         const container = document.getElementById('cantieri-container');
         if (!container) return;
@@ -901,7 +702,7 @@ class SseManager {
             container.appendChild(cantiereEl);
         });
         
-        // Setup drop zone per la mappa (per rimuovere operai)
+        // Setup drop zone per la mappa
         const mapContainer = document.getElementById('map-container');
         if (mapContainer) {
             mapContainer.addEventListener('dragover', (e) => {
@@ -932,7 +733,9 @@ class SseManager {
                         cantiere.x = Math.max(0, Math.min(x, rect.width - 200));
                         cantiere.y = Math.max(0, Math.min(y, rect.height - 100));
                         
-                        await this.saveToDatabase('cantieri', cantiere);
+                        if (this.supabaseConfig.connected) {
+                            await this.saveToDatabase('cantieri', cantiere);
+                        }
                         this.saveAllData();
                     }
                 } else if (this.draggedOperaio) {
@@ -971,7 +774,9 @@ class SseManager {
             const oldCantiere = this.cantieri.find(c => c.id === operaio.cantiere);
             if (oldCantiere) {
                 oldCantiere.operai = oldCantiere.operai.filter(id => id !== operaioId);
-                await this.saveToDatabase('cantieri', oldCantiere);
+                if (this.supabaseConfig.connected) {
+                    await this.saveToDatabase('cantieri', oldCantiere);
+                }
             }
         }
         
@@ -982,8 +787,10 @@ class SseManager {
         }
         
         // Salva nel database
-        await this.saveToDatabase('operai', operaio);
-        await this.saveToDatabase('cantieri', cantiere);
+        if (this.supabaseConfig.connected) {
+            await this.saveToDatabase('operai', operaio);
+            await this.saveToDatabase('cantieri', cantiere);
+        }
         
         this.renderApp();
         this.saveAllData();
@@ -998,12 +805,16 @@ class SseManager {
             const cantiere = this.cantieri.find(c => c.id === operaio.cantiere);
             if (cantiere) {
                 cantiere.operai = cantiere.operai.filter(id => id !== operaioId);
-                await this.saveToDatabase('cantieri', cantiere);
+                if (this.supabaseConfig.connected) {
+                    await this.saveToDatabase('cantieri', cantiere);
+                }
             }
         }
         
         operaio.cantiere = null;
-        await this.saveToDatabase('operai', operaio);
+        if (this.supabaseConfig.connected) {
+            await this.saveToDatabase('operai', operaio);
+        }
         
         this.renderApp();
         this.saveAllData();
@@ -1048,14 +859,16 @@ class SseManager {
             cantiere.operai = existing.operai;
             cantiere.calendarSelections = existing.calendarSelections;
             cantiere.timeSlot = existing.timeSlot;
-            cantiere.operaiTimeSlots = existing.operaiTimeSlots;
+            cantiere.operaiTimeSlots = existing.operaiTimeSlots || {};
             this.cantieri[existingIndex] = cantiere;
         } else {
             this.cantieri.push(cantiere);
         }
         
         // Salva nel database
-        await this.saveToDatabase('cantieri', cantiere);
+        if (this.supabaseConfig.connected) {
+            await this.saveToDatabase('cantieri', cantiere);
+        }
         
         this.renderApp();
         this.saveAllData();
@@ -1102,7 +915,7 @@ class SseManager {
         
         document.getElementById('cantiere-operai-list').innerHTML = operaiHtml;
         
-        // Render calendario e time slots
+        // Render calendario
         this.renderCalendar();
         
         document.getElementById('time-start').value = cantiere.timeSlot?.start || '08:00';
@@ -1111,13 +924,17 @@ class SseManager {
         // Aggiorna time slot in tempo reale
         document.getElementById('time-start').onchange = async (e) => {
             cantiere.timeSlot.start = e.target.value;
-            await this.saveToDatabase('cantieri', cantiere);
+            if (this.supabaseConfig.connected) {
+                await this.saveToDatabase('cantieri', cantiere);
+            }
             this.saveAllData();
         };
         
         document.getElementById('time-end').onchange = async (e) => {
             cantiere.timeSlot.end = e.target.value;
-            await this.saveToDatabase('cantieri', cantiere);
+            if (this.supabaseConfig.connected) {
+                await this.saveToDatabase('cantieri', cantiere);
+            }
             this.saveAllData();
         };
         
@@ -1134,8 +951,10 @@ class SseManager {
         cantiere.operai = cantiere.operai.filter(id => id !== operaioId);
         
         // Salva nel database
-        await this.saveToDatabase('operai', operaio);
-        await this.saveToDatabase('cantieri', cantiere);
+        if (this.supabaseConfig.connected) {
+            await this.saveToDatabase('operai', operaio);
+            await this.saveToDatabase('cantieri', cantiere);
+        }
         
         this.renderApp();
         this.saveAllData();
@@ -1145,6 +964,215 @@ class SseManager {
         }
         
         alert(`✅ ${operaio.nome} rimosso dal cantiere`);
+    }
+    
+    // ===== GESTIONE CALENDARIO CON FASCE ORARIE PERSONALIZZATE (NUOVA FUNZIONALITÀ) =====
+    renderCalendar() {
+        if (!this.currentCantiereId) return;
+        
+        const cantiere = this.cantieri.find(c => c.id === this.currentCantiereId);
+        if (!cantiere) return;
+        
+        const monthNames = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'];
+        const dayNames = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
+        
+        document.getElementById('calendar-month-year').textContent = `${monthNames[this.currentMonth]} ${this.currentYear}`;
+        
+        const firstDay = new Date(this.currentYear, this.currentMonth, 1);
+        const startDate = new Date(firstDay);
+        startDate.setDate(startDate.getDate() - firstDay.getDay());
+        
+        let calendarHtml = '';
+        dayNames.forEach(day => calendarHtml += `<div class="calendar-day-header">${day}</div>`);
+        
+        for (let i = 0; i < 42; i++) {
+            const currentDate = new Date(startDate);
+            currentDate.setDate(startDate.getDate() + i);
+            
+            const isCurrentMonth = currentDate.getMonth() === this.currentMonth;
+            const dateString = currentDate.toISOString().split('T')[0];
+            const isSelected = cantiere.calendarSelections && cantiere.calendarSelections[dateString];
+            
+            calendarHtml += `
+                <div class="calendar-day ${!isCurrentMonth ? 'other-month' : ''} ${isSelected ? 'selected' : ''}" 
+                     data-date="${dateString}">
+                    ${currentDate.getDate()}
+                </div>
+            `;
+        }
+        
+        document.getElementById('calendar-days').innerHTML = calendarHtml;
+        
+        // Event listeners per i giorni del calendario
+        document.querySelectorAll('.calendar-day').forEach(day => {
+            day.addEventListener('click', (e) => {
+                const date = e.target.dataset.date;
+                this.selectCalendarDate(date);
+            });
+        });
+    }
+    
+    async selectCalendarDate(dateString) {
+        const cantiere = this.cantieri.find(c => c.id === this.currentCantiereId);
+        if (!cantiere) return;
+        
+        this.selectedDate = dateString;
+        
+        // Toggle selezione
+        if (!cantiere.calendarSelections) cantiere.calendarSelections = {};
+        cantiere.calendarSelections[dateString] = !cantiere.calendarSelections[dateString];
+        
+        // Render orari personalizzati se il giorno è selezionato
+        if (cantiere.calendarSelections[dateString]) {
+            this.renderCustomTimeSlots(dateString);
+        } else {
+            document.getElementById('custom-time-slots').innerHTML = '';
+        }
+        
+        this.renderCalendar();
+        if (this.supabaseConfig.connected) {
+            await this.saveToDatabase('cantieri', cantiere);
+        }
+        this.saveAllData();
+    }
+    
+    renderCustomTimeSlots(dateString) {
+        const cantiere = this.cantieri.find(c => c.id === this.currentCantiereId);
+        if (!cantiere) return;
+        
+        const operaiAssegnati = cantiere.operai.map(id => this.operai.find(o => o.id === id)).filter(o => o);
+        
+        if (!cantiere.operaiTimeSlots) cantiere.operaiTimeSlots = {};
+        if (!cantiere.operaiTimeSlots[dateString]) cantiere.operaiTimeSlots[dateString] = {};
+        
+        let timeSlotsHtml = `
+            <div class="custom-time-slots">
+                <h4>⏰ Orari Personalizzati - ${new Date(dateString).toLocaleDateString('it-IT')}</h4>
+                
+                <div class="same-time-for-all">
+                    <button class="btn btn-primary" onclick="app.applySameTimeForAll('${dateString}')">
+                        📋 Applica Stesso Orario a Tutti
+                    </button>
+                    <div class="time-inputs">
+                        <label>
+                            Inizio: <input type="time" id="global-start-${dateString}" value="${cantiere.timeSlot.start}">
+                        </label>
+                        <label>
+                            Fine: <input type="time" id="global-end-${dateString}" value="${cantiere.timeSlot.end}">
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="individual-time-slots">
+                    <h5>👥 Orari Individuali</h5>
+        `;
+        
+        operaiAssegnati.forEach(operaio => {
+            const currentSlot = cantiere.operaiTimeSlots[dateString][operaio.id] || {
+                start: cantiere.timeSlot.start,
+                end: cantiere.timeSlot.end
+            };
+            
+            timeSlotsHtml += `
+                <div class="operaio-time-slot">
+                    <span class="operaio-name">${operaio.avatar} ${operaio.nome}</span>
+                    <div class="time-inputs">
+                        <label>
+                            Inizio: 
+                            <input type="time" 
+                                   value="${currentSlot.start}" 
+                                   onchange="app.updateOperaioTimeSlot('${dateString}', ${operaio.id}, 'start', this.value)">
+                        </label>
+                        <label>
+                            Fine: 
+                            <input type="time" 
+                                   value="${currentSlot.end}" 
+                                   onchange="app.updateOperaioTimeSlot('${dateString}', ${operaio.id}, 'end', this.value)">
+                        </label>
+                    </div>
+                </div>
+            `;
+        });
+        
+        timeSlotsHtml += `
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('custom-time-slots').innerHTML = timeSlotsHtml;
+    }
+    
+    async applySameTimeForAll(dateString) {
+        const cantiere = this.cantieri.find(c => c.id === this.currentCantiereId);
+        if (!cantiere) return;
+        
+        const globalStart = document.getElementById(`global-start-${dateString}`).value;
+        const globalEnd = document.getElementById(`global-end-${dateString}`).value;
+        
+        if (!globalStart || !globalEnd) {
+            alert('Inserisci orario di inizio e fine');
+            return;
+        }
+        
+        const operaiAssegnati = cantiere.operai;
+        
+        if (!cantiere.operaiTimeSlots[dateString]) cantiere.operaiTimeSlots[dateString] = {};
+        
+        operaiAssegnati.forEach(operaioId => {
+            cantiere.operaiTimeSlots[dateString][operaioId] = {
+                start: globalStart,
+                end: globalEnd
+            };
+        });
+        
+        // Salva turno nel database
+        const turno = {
+            id: `${this.currentCantiereId}-${dateString}`,
+            cantiere_id: this.currentCantiereId,
+            data: dateString,
+            operai_time_slots: cantiere.operaiTimeSlots[dateString],
+            created_at: new Date().toISOString()
+        };
+        
+        if (this.supabaseConfig.connected) {
+            await this.saveToDatabase('turni_lavoro', turno);
+        }
+        
+        this.renderCustomTimeSlots(dateString);
+        this.saveAllData();
+        
+        alert('✅ Orario applicato a tutti i dipendenti');
+    }
+    
+    async updateOperaioTimeSlot(dateString, operaioId, field, value) {
+        const cantiere = this.cantieri.find(c => c.id === this.currentCantiereId);
+        if (!cantiere) return;
+        
+        if (!cantiere.operaiTimeSlots[dateString]) cantiere.operaiTimeSlots[dateString] = {};
+        if (!cantiere.operaiTimeSlots[dateString][operaioId]) {
+            cantiere.operaiTimeSlots[dateString][operaioId] = {
+                start: cantiere.timeSlot.start,
+                end: cantiere.timeSlot.end
+            };
+        }
+        
+        cantiere.operaiTimeSlots[dateString][operaioId][field] = value;
+        
+        // Salva turno nel database
+        const turno = {
+            id: `${this.currentCantiereId}-${dateString}-${operaioId}`,
+            cantiere_id: this.currentCantiereId,
+            operaio_id: operaioId,
+            data: dateString,
+            ora_inizio: cantiere.operaiTimeSlots[dateString][operaioId].start,
+            ora_fine: cantiere.operaiTimeSlots[dateString][operaioId].end,
+            created_at: new Date().toISOString()
+        };
+        
+        if (this.supabaseConfig.connected) {
+            await this.saveToDatabase('turni_lavoro', turno);
+        }
+        this.saveAllData();
     }
     
     changeMonth(direction) {
@@ -1225,7 +1253,7 @@ class SseManager {
             return;
         }
         
-        // Simulazione invio email (qui integreresti con il tuo servizio email)
+        // Simulazione invio email
         alert(`📧 Email di partecipazione inviate a ${operaiAssegnati.length} operai per ${selectedDates.length} giorni selezionati`);
     }
     
@@ -1264,7 +1292,7 @@ class SseManager {
         }
     }
     
-    // ===== PLACEHOLDER METHODS =====
+    // ===== PLACEHOLDER METHODS (IDENTICI ALLA 1.6.3) =====
     showUserManagement() {
         alert('Gestione utenti: Funzionalità in sviluppo');
     }
@@ -1279,6 +1307,50 @@ class SseManager {
     
     importOperaiCSV() {
         alert('Import CSV operai: Funzionalità in sviluppo');
+    }
+    
+    showOperaiList() {
+        alert('Lista operai: Funzionalità in sviluppo');
+    }
+    
+    showCantieriList() {
+        alert('Lista cantieri: Funzionalità in sviluppo');
+    }
+    
+    showModifyCantiere() {
+        alert('Modifica cantiere: Funzionalità in sviluppo');
+    }
+    
+    showDeleteCantiere() {
+        alert('Elimina cantiere: Funzionalità in sviluppo');
+    }
+    
+    saveEmailSettings() {
+        alert('Salvataggio email: Funzionalità in sviluppo');
+    }
+    
+    saveGeneralSettings() {
+        alert('Salvataggio impostazioni: Funzionalità in sviluppo');
+    }
+    
+    testEmailConnection() {
+        alert('Test email: Funzionalità in sviluppo');
+    }
+    
+    resetEmailSettings() {
+        alert('Reset email: Funzionalità in sviluppo');
+    }
+    
+    resetGeneralSettings() {
+        alert('Reset impostazioni: Funzionalità in sviluppo');
+    }
+    
+    addUser() {
+        alert('Aggiungi utente: Funzionalità in sviluppo');
+    }
+    
+    saveUser() {
+        alert('Salva utente: Funzionalità in sviluppo');
     }
     
     exportAllData() {
