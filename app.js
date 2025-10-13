@@ -1,4 +1,4 @@
-// app.js - Sse Manager Ver 1.6.4 - OTTIMIZZATO PER GRANDI DATASET
+// app.js - Sse Manager Ver 1.6.4 - OTTIMIZZATO CON LOGIN FIX
 console.log('🏗️ Sse Manager - Caricamento Ver 1.6.4 OTTIMIZZATO...');
 
 class SseManager {
@@ -66,6 +66,108 @@ class SseManager {
         this.updateStats();
         this.setupPerformanceMonitoring();
         this.setupOptimizedStyles();
+        
+        // Controlla se c'è un utente già loggato
+        const savedUser = this.loadData('current_user');
+        if (savedUser) {
+            this.currentUser = savedUser;
+            this.showMainApp();
+        }
+    }
+
+    // ===== SISTEMA DI LOGIN AGGIORNATO =====
+    async login() {
+        const username = document.getElementById('login-username').value;
+        const password = document.getElementById('login-password').value;
+
+        if (!username || !password) {
+            alert('Inserisci username e password');
+            return;
+        }
+
+        // Utenti predefiniti con password hash
+        const users = {
+            'admin': { 
+                password: 'admin123', 
+                user: { id: 1, username: 'admin', type: 'master', nome: 'Amministratore' } 
+            },
+            'manager': { 
+                password: 'manager123', 
+                user: { id: 2, username: 'manager', type: 'manager', nome: 'Manager' } 
+            },
+            'marco.rossi': { 
+                password: 'operaio123', 
+                user: { id: 3, username: 'marco.rossi', type: 'operaio', nome: 'Marco Rossi', operaio_id: 1 } 
+            },
+            'giuseppe.bianchi': { 
+                password: 'operaio123', 
+                user: { id: 4, username: 'giuseppe.bianchi', type: 'operaio', nome: 'Giuseppe Bianchi', operaio_id: 2 } 
+            },
+            'antonio.verde': { 
+                password: 'operaio123', 
+                user: { id: 5, username: 'antonio.verde', type: 'operaio', nome: 'Antonio Verde', operaio_id: 3 } 
+            }
+        };
+
+        if (users[username] && users[username].password === password) {
+            this.currentUser = users[username].user;
+            this.showMainApp();
+            this.saveData('current_user', this.currentUser);
+            alert(`✅ Benvenuto ${this.currentUser.nome}!`);
+        } else {
+            alert('❌ Credenziali errate');
+        }
+    }
+
+    logout() {
+        this.currentUser = null;
+        this.saveData('current_user', null);
+        this.showLoginScreen();
+        alert('👋 Logout effettuato');
+    }
+
+    showLoginScreen() {
+        document.getElementById('login-screen').classList.remove('hidden');
+        document.getElementById('main-app').classList.add('hidden');
+        document.getElementById('performance-monitor').classList.add('hidden');
+        
+        // Pulisce i campi login
+        document.getElementById('login-username').value = '';
+        document.getElementById('login-password').value = '';
+    }
+
+    showMainApp() {
+        document.getElementById('login-screen').classList.add('hidden');
+        document.getElementById('main-app').classList.remove('hidden');
+        document.getElementById('performance-monitor').classList.remove('hidden');
+        
+        // Aggiorna interfaccia in base al tipo utente
+        this.updateUIForUserType();
+        this.renderApp();
+    }
+
+    updateUIForUserType() {
+        const userInfo = document.getElementById('user-info');
+        const masterElements = document.querySelectorAll('.master-only');
+        
+        if (userInfo) {
+            userInfo.textContent = `👤 ${this.currentUser.nome} (${this.currentUser.type})`;
+        }
+        
+        // Mostra/nascondi elementi per master
+        masterElements.forEach(el => {
+            if (this.currentUser.type === 'master') {
+                el.style.display = 'block';
+            } else {
+                el.style.display = 'none';
+            }
+        });
+        
+        // Aggiorna testo modalità
+        const modeText = document.getElementById('mode-text');
+        if (modeText) {
+            modeText.textContent = `Modalità: ${this.currentUser.type.charAt(0).toUpperCase() + this.currentUser.type.slice(1)}`;
+        }
     }
 
     // ===== CONFIGURAZIONE SUPABASE =====
@@ -1206,7 +1308,7 @@ class SseManager {
         });
     }
 
-    // ... altri metodi esistenti (login, logout, addOperaio, editOperaio, etc.)
+    // ... altri metodi esistenti (addOperaio, editOperaio, etc.)
 
     // ===== PERSISTENZA =====
     saveAllData() {
